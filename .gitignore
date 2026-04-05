@@ -1,0 +1,49 @@
+# Compiled Object files, Static and Dynamic libs
+*.a
+*.o
+*.so
+*.dylib
+*.dll
+
+# Binaries
+*.exe
+*.exe~
+*.test
+
+# Go workspace files
+go.work
+go.work.sum
+
+# Test and Profiling Artifacts
+coverage.out
+coverage.html
+profile.out
+
+# Ignored output directories for binaries
+/bin/
+/dist/
+/releases/
+/npm/bin/
+/example/bin
+
+# Temporary directories used by 'craft dev'
+/tmp/
+craft-dev-*/
+
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+.project

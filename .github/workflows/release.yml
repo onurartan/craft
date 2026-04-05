@@ -1,0 +1,37 @@
+name: Production Release
+
+on:
+  push:
+    tags:
+      - 'v*' 
+
+permissions:
+  contents: write 
+
+jobs:
+  release:
+    name: Build and Publish Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go Environment
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Bootstrap Craft
+        run: go install .
+        
+      - name: Pre-flight Checks
+        run: craft check
+
+      - name: Compile Cross-Platform Artifacts
+        run: craft build --all --strip
+
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          files: bin/* 
+          generate_release_notes: true 
