@@ -18,7 +18,7 @@ The Go toolchain is incredibly powerful, but orchestrating multi-platform releas
 Since Craft is built with Go, you can install it globally using the native toolchain. Ensure your `~/go/bin` (or `%USERPROFILE%\go\bin` on Windows) is added to your system's `PATH`.
 
 ```bash
-go install [github.com/onurartan/craft@latest](https://github.com/onurartan/craft@latest)
+go install github.com/onurartan/craft@latest
 ````
 
 ## Quick Start
