@@ -20,7 +20,7 @@ func (u *uiAPI) PrintBanner() {
 	pterm.Println()
 	pterm.Printf("%s %s\n",
 		pterm.NewStyle(pterm.FgCyan, pterm.Bold).Sprint("CRAFT"),
-		pterm.FgGray.Sprint("v1.0.0"),
+		pterm.FgGray.Sprintf("v%s", CraftAppVersion),
 	)
 }
 

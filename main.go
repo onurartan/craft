@@ -49,6 +49,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var CraftAppVersion = "0.0.1" // Default version, can be overridden via LDFLAGS
+
 var (
 	flagName      string
 	flagVersion   string
@@ -214,7 +216,6 @@ func main() {
 	setupFlags(rootCmd)
 	setupFlags(buildCmd)
 
-
 	rootCmd.AddCommand(initCmd, buildCmd, runCmd, irunCmd, devCmd, cleanCmd, checkCmd, doctorCmd, tidyCmd, fmtCmd, vetCmd, testCmd, genCmd, installCmd)
 
 	if err := rootCmd.Execute(); err != nil {
@@ -301,7 +302,6 @@ func prepareEngine() {
 			AppConfig.ExactName = flagExactName
 		}
 	}
-
 
 	if AppConfig.Name == "" {
 		pterm.Error.Printf("Project name is required. Set it in %s or use --name.\n", ConfigFileName)

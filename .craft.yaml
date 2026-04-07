@@ -10,7 +10,7 @@ exact_name: true # Omit OS/Arch suffixes from the binary name
 
 # --- VERSIONING & LDFLAGS INJECTION ---
 version: "0.1.0" # Application version string
-version_pkg: "" # Package path to inject the version via LDFLAGS (e.g., main.Version)
+version_pkg: "main.CraftAppVersion" # Package path to inject the version via LDFLAGS (e.g., main.Version)
 
 # --- PLATFORM TARGETS ---
 build_all: false # Compile for all major OS/Arch combinations
