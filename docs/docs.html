@@ -498,33 +498,27 @@
           });
 
           try {
-            let files = [];
-
-            if (USE_LOCAL_DOCS) {
-              
-              files = [
-                { name: 'getting-started.md', download_url: `${LOCAL_DOCS_PATH}/getting-started.md` },
-                { name: 'architecture.md', download_url: `${LOCAL_DOCS_PATH}/architecture.md` },
-                { name: 'cli-reference.md', download_url: `${LOCAL_DOCS_PATH}/cli-reference.md` },
-                { name: 'configuration/index.md', download_url: `${LOCAL_DOCS_PATH}/configuration/index.md` },
-                { name: 'configuration/commands.md', download_url: `${LOCAL_DOCS_PATH}/configuration/commands.md` },
-                { name: 'core-features/toolchain.md', download_url: `${LOCAL_DOCS_PATH}/core-features/toolchain.md` },
-                { name: 'core-features/hot-reload.md', download_url: `${LOCAL_DOCS_PATH}/core-features/hot-reload.md` },
-                { name: 'core-features/asset-minification.md', download_url: `${LOCAL_DOCS_PATH}/core-features/asset-minification.md` },
-                { name: 'core-features/package-management.md', download_url: `${LOCAL_DOCS_PATH}/core-features/package-management.md` },
-                { name: 'core-features/scaffolding.md', download_url: `${LOCAL_DOCS_PATH}/core-features/scaffolding.md` },
-                { name: 'core-features/task-runner.md', download_url: `${LOCAL_DOCS_PATH}/core-features/task-runner.md` },
-                { name: 'advanced/error-parser.md', download_url: `${LOCAL_DOCS_PATH}/advanced/error-parser.md` },
-                { name: 'advanced/inline-scripting.md', download_url: `${LOCAL_DOCS_PATH}/advanced/inline-scripting.md` },
-                // { name: 'advanced/ui-system-design.md', download_url: `${LOCAL_DOCS_PATH}/advanced/ui-system-design.md` }
-              ];
-            } else {
-              const res = await fetch('https://api.github.com/repos/onurartan/craft/contents/.docs');
-              if (!res.ok) throw new Error('API Rate limit or Missing Folder');
-              files = await res.json();
-            }
+            const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/onurartan/craft/main/.docs';
+            const docsBase = USE_LOCAL_DOCS ? LOCAL_DOCS_PATH : GITHUB_RAW_BASE;
             
-            this.docs = files.filter(f => f.name.endsWith('.md'));
+            let files = [
+                { name: 'getting-started.md', download_url: `${docsBase}/getting-started.md` },
+                { name: 'architecture.md', download_url: `${docsBase}/architecture.md` },
+                { name: 'cli-reference.md', download_url: `${docsBase}/cli-reference.md` },
+                { name: 'configuration/index.md', download_url: `${docsBase}/configuration/index.md` },
+                { name: 'configuration/commands.md', download_url: `${docsBase}/configuration/commands.md` },
+                { name: 'core-features/toolchain.md', download_url: `${docsBase}/core-features/toolchain.md` },
+                { name: 'core-features/hot-reload.md', download_url: `${docsBase}/core-features/hot-reload.md` },
+                { name: 'core-features/asset-minification.md', download_url: `${docsBase}/core-features/asset-minification.md` },
+                { name: 'core-features/package-management.md', download_url: `${docsBase}/core-features/package-management.md` },
+                { name: 'core-features/scaffolding.md', download_url: `${docsBase}/core-features/scaffolding.md` },
+                { name: 'core-features/task-runner.md', download_url: `${docsBase}/core-features/task-runner.md` },
+                { name: 'advanced/error-parser.md', download_url: `${docsBase}/advanced/error-parser.md` },
+                { name: 'advanced/inline-scripting.md', download_url: `${docsBase}/advanced/inline-scripting.md` },
+                { name: 'advanced/ui-system-design.md', download_url: `${docsBase}/advanced/ui-system-design.md` }
+            ];
+            
+            this.docs = files;
 
             this.groups = [
               {
