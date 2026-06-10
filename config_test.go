@@ -93,6 +93,8 @@ dev:
 
 // TestExtractFromStruct validates the dynamic file parsing engine for JSON and YAML.
 func TestExtractFromStruct(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name          string
 		rawData       []byte

@@ -42,7 +42,7 @@ func StartDevMode(args []string) error {
 	excludeCount := 0
 
 	// Recursive directory discovery with error resilience and exclusion logic.
-	err = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+	if err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			pterm.FgYellow.Printf("[craft] warning: skipping '%s' (reason: %v)\n", path, err)
 			if info != nil && info.IsDir() {
@@ -63,7 +63,9 @@ func StartDevMode(args []string) error {
 			return watcher.Add(path)
 		}
 		return nil
-	})
+	}); err != nil {
+		pterm.FgRed.Printf("[craft] error scanning directories: %v\n", err)
+	}
 
 	pterm.Println()
 	pterm.FgCyan.Printf("[craft] watching %d directories\n", watchCount)
@@ -163,11 +165,10 @@ func StartDevMode(args []string) error {
 			tmpFilePath := getTempFilePath()
 			lastTempFile = tmpFilePath
 
-			res := Builder.Compile(BuildTarget{OS: runtime.GOOS, Arch: runtime.GOARCH}, tmpFilePath, true)
+			res := Builder.Compile(BuildTarget{OS: runtime.GOOS, Arch: runtime.GOARCH}, tmpFilePath, true, true)
 
 			if res.ErrorMsg != "" {
-				pterm.FgRed.Println("build failed!")
-				fmt.Println(res.ErrorMsg)
+				PrintParsedError(runtime.GOOS+"/"+runtime.GOARCH, res.ErrorMsg)
 				continue
 			}
 

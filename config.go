@@ -38,22 +38,40 @@ type DevConfig struct {
 	Watch WatchConfig `yaml:"watch"`
 }
 
+type MinifyConfig struct {
+	Enabled    bool     `yaml:"enabled"`
+	Extensions []string `yaml:"extensions"`
+	Dirs       []string `yaml:"dirs"`
+}
+
+type ScriptsConfig struct {
+	PreBuild  interface{} `yaml:"pre_build"`
+	PostBuild interface{} `yaml:"post_build"`
+	PreRun    interface{} `yaml:"pre_run"`
+	PostRun   interface{} `yaml:"post_run"`
+}
+
 type Config struct {
-	Name       string    `yaml:"name"`
-	Version    string    `yaml:"version"`
-	EntryPoint string    `yaml:"entry_point"`
-	OutputDir  string    `yaml:"output_dir"`
-	VersionPkg string    `yaml:"version_pkg"`
-	BuildAll   bool      `yaml:"build_all"`
-	Platforms  []string  `yaml:"platforms"`
-	Profiles   map[string]ProfileConfig `yaml:"profiles"`
-	StripDebug bool      `yaml:"strip_debug"`
-	ExactName  bool      `yaml:"exact_name"`
-	Trimpath   bool      `yaml:"trimpath"`
-	CgoEnabled bool      `yaml:"cgo_enabled"`
-	Race       bool      `yaml:"race"`
-	Tags       []string  `yaml:"tags"`
-	Dev        DevConfig `yaml:"dev"`
+	Name        string                   `yaml:"name"`
+	Version     string                   `yaml:"version"`
+	Toolchain   string                   `yaml:"toolchain"`
+	EntryPoint  string                   `yaml:"entry_point"`
+	OutputDir   string                   `yaml:"output_dir"`
+	VersionPkg  string                   `yaml:"version_pkg"`
+	BuildAll    bool                     `yaml:"build_all"`
+	Platforms   []string                 `yaml:"platforms"`
+	Scripts     ScriptsConfig            `yaml:"scripts"`
+	Commands    map[string]interface{}   `yaml:"commands"`
+	Profiles    map[string]ProfileConfig `yaml:"profiles"`
+	AutoInstall bool                     `yaml:"auto_install"`
+	StripDebug  bool                     `yaml:"strip_debug"`
+	ExactName   bool                     `yaml:"exact_name"`
+	Trimpath    bool                     `yaml:"trimpath"`
+	CgoEnabled  bool                     `yaml:"cgo_enabled"`
+	Race        bool                     `yaml:"race"`
+	Tags        []string                 `yaml:"tags"`
+	Dev         DevConfig                `yaml:"dev"`
+	Minify      MinifyConfig             `yaml:"minify"`
 }
 
 // Global AppConfig
@@ -66,19 +84,27 @@ func ConfigExists() bool {
 
 func ConfigLoad() {
 	AppConfig = Config{
-		Version:    "1.0.0",
-		EntryPoint: ".",
-		OutputDir:  DefaultDistDir,
-		StripDebug: true,
-		Trimpath:   true,
-		CgoEnabled: false,
+		Name:        "craft-app",
+		Version:     "1.0.0",
+		Toolchain:   "",
+		EntryPoint:  ".",
+		OutputDir:   DefaultDistDir,
+		StripDebug:  true,
+		AutoInstall: true,
+		Trimpath:    true,
+		CgoEnabled:  false,
 		Dev: DevConfig{
 			Watch: WatchConfig{
-				// Enabled:     false,
-				DelayMs:     500,
-				IncludeExts: []string{".go", ".html", ".tpl", ".env", ".yaml", ".json"},
-				ExcludeDirs: []string{".git", "vendor", "node_modules", "bin", "tmp", "assets", "testdata", ".vscode"},
+				DelayMs:      500,
+				IncludeExts:  []string{"go", "html", "tpl", "env", "yaml"},
+				ExcludeDirs:  []string{"bin", "tmp", "vendor", "node_modules", ".git", "assets", "testdata"},
+				ExcludeFiles: []string{ConfigFileName},
 			},
+		},
+		Minify: MinifyConfig{
+			Enabled:    false,
+			Extensions: []string{".html", ".css", ".js", ".json", ".svg"},
+			Dirs:       []string{},
 		},
 	}
 
@@ -88,6 +114,77 @@ func ConfigLoad() {
 			_ = yaml.Unmarshal(data, &AppConfig)
 		}
 	}
+}
+
+// ConfigSave marshals AppConfig back to .craft.yaml.
+// WARNING: This strips all comments and reformats the file.
+func ConfigSave() error {
+	data, err := yaml.Marshal(&AppConfig)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(ConfigFileName, data, 0644)
+}
+
+// UpdateToolchainInConfig updates the toolchain key in .craft.yaml while preserving comments.
+func UpdateToolchainInConfig(version string) error {
+	data, err := os.ReadFile(ConfigFileName)
+	if err != nil {
+		if os.IsNotExist(err) {
+			AppConfig.Toolchain = version
+			return ConfigSave()
+		}
+		return err
+	}
+
+	var yamlRoot yaml.Node
+	if err := yaml.Unmarshal(data, &yamlRoot); err != nil {
+		return err
+	}
+
+	if len(yamlRoot.Content) == 0 || yamlRoot.Content[0].Kind != yaml.MappingNode {
+		return ConfigSave() // Fallback if YAML is malformed
+	}
+
+	mapping := yamlRoot.Content[0]
+	found := false
+
+	for i := 0; i < len(mapping.Content); i += 2 {
+		if mapping.Content[i].Value == "toolchain" {
+			mapping.Content[i+1].Value = version
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		keyNode := &yaml.Node{Kind: yaml.ScalarNode, Value: "toolchain"}
+		valNode := &yaml.Node{Kind: yaml.ScalarNode, Value: version}
+		
+		newContent := make([]*yaml.Node, 0, len(mapping.Content)+2)
+		inserted := false
+		
+		for i := 0; i < len(mapping.Content); i += 2 {
+			if mapping.Content[i].Value == "entry_point" || mapping.Content[i].Value == "output_dir" {
+				newContent = append(newContent, keyNode, valNode)
+				inserted = true
+			}
+			newContent = append(newContent, mapping.Content[i], mapping.Content[i+1])
+		}
+		
+		if !inserted {
+			newContent = append(newContent, keyNode, valNode)
+		}
+		
+		mapping.Content = newContent
+	}
+
+	out, err := yaml.Marshal(&yamlRoot)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(ConfigFileName, out, 0644)
 }
 
 func ResolveVersion() {

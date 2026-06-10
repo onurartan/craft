@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Craft Documentation</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  
+  <!-- Prism Syntax Highlighting (Dark Theme) -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          },
+          colors: {
+            background: '#000000',
+            surface: '#0A0A0A',
+            border: 'rgba(255, 255, 255, 0.08)',
+            text: {
+              primary: '#EDEDED',
+              secondary: '#888888',
+              muted: '#666666'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { 
+      background-color: #000; 
+      color: #ededed; 
+      -webkit-font-smoothing: antialiased; 
+      -moz-osx-font-smoothing: grayscale;
+    }
+    ::selection { background: rgba(255,255,255,0.15); color: #fff; }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+    /* Linear/Vercel Premium Prose */
+    .prose { 
+      color: #888; 
+      font-size: 15px; 
+      line-height: 1.8; 
+    }
+    .prose h1 { 
+      color: #fff; 
+      font-size: 2.25rem; 
+      font-weight: 600; 
+      letter-spacing: -0.04em; 
+      margin-bottom: 2rem; 
+      line-height: 1.2; 
+    }
+    .prose h2 { 
+      color: #fff; 
+      font-size: 1.5rem; 
+      font-weight: 600; 
+      letter-spacing: -0.03em; 
+      margin-top: 3.5rem; 
+      margin-bottom: 1.5rem; 
+      border-bottom: 1px solid rgba(255,255,255,0.06); 
+      padding-bottom: 0.75rem; 
+    }
+    .prose h3 { 
+      color: #ededed; 
+      font-size: 1.125rem; 
+      font-weight: 500; 
+      letter-spacing: -0.02em; 
+      margin-top: 2rem; 
+      margin-bottom: 1rem; 
+    }
+    .prose p { margin-bottom: 1.5rem; }
+    .prose ul { list-style-type: none; padding-left: 0; margin-bottom: 1.5rem; }
+    .prose li { position: relative; padding-left: 1.25rem; margin-bottom: 0.5rem; }
+    .prose li::before { 
+      content: ""; 
+      position: absolute; 
+      left: 0; 
+      top: 0.65rem; 
+      width: 4px; 
+      height: 4px; 
+      border-radius: 50%; 
+      background: rgba(255,255,255,0.2); 
+    }
+
+    /* Links */
+    .prose a { 
+      color: #fff; 
+      text-decoration: none; 
+      border-bottom: 1px solid rgba(255,255,255,0.2); 
+      transition: all 0.2s ease; 
+    }
+    .prose a:hover { border-color: #fff; color: #fff; }
+
+    /* Inline Code */
+    .prose code:not([class*="language-"]) {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85em;
+      padding: 0.15rem 0.35rem;
+      background-color: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 4px;
+      color: #ededed;
+    }
+
+    /* Code Blocks */
+    .prose pre {
+      background-color: #0A0A0A !important;
+      padding: 1.25rem !important;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+      overflow-x: auto;
+      margin: 2rem 0;
+      position: relative;
+    }
+    /* Language Badge */
+    .prose pre::before {
+      content: attr(data-language);
+      position: absolute;
+      top: 0; right: 0;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.7rem;
+      color: #666;
+      font-family: 'Inter', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      opacity: 0.5;
+      transition: opacity 0.2s ease;
+    }
+    .prose pre.group:hover::before {
+      opacity: 0;
+    }
+    .prose pre code {
+      background-color: transparent !important;
+      border: none;
+      padding: 0;
+      font-size: 13px !important;
+      color: #888;
+      font-family: 'JetBrains Mono', monospace;
+      text-shadow: none !important;
+    }
+    
+    .prose strong { color: #ededed; font-weight: 600; }
+    .prose blockquote { 
+      border-left: 2px solid rgba(255,255,255,0.1); 
+      padding-left: 1.25rem; 
+      color: #666; 
+      font-style: normal; 
+      margin: 2rem 0;
+    }
+    .prose hr { border-color: rgba(255,255,255,0.06); margin: 3rem 0; }
+
+    /* Fade-in Animation */
+    [x-cloak] { display: none !important; }
+    .fade-enter { opacity: 0; transform: translateY(5px); }
+    .fade-enter-active { opacity: 1; transform: translateY(0); transition: all 0.4s ease-out; }
+  </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+  
+  <div x-data="docsApp()" x-init="initApp()" class="flex w-full h-full">
+    
+    <!-- Sidebar -->
+    <aside class="w-64 lg:w-[280px] shrink-0 border-r border-border bg-background flex flex-col h-full z-20">
+      
+      <!-- Logo Header -->
+      <div class="h-14 flex items-center px-6 shrink-0">
+        <a href="index.html"  class="flex items-center group">
+          <span class="font-bold text-lg tracking-tight text-white">Craft Docs</span>
+        </a>
+      </div>
+
+      <!-- Search Input in Sidebar -->
+      <div class="px-4 py-2 shrink-0 border-b border-white/5">
+        <button @click="openSearch()" class="w-full flex items-center justify-between px-3 py-2 text-sm text-text-secondary bg-[#050505] border border-border rounded-lg hover:border-white/20 transition-colors group">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <span class="opacity-70 group-hover:opacity-100 transition-opacity">Search docs...</span>
+          </div>
+          <kbd class="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono text-text-secondary bg-background border border-border rounded opacity-70">
+            <span class="text-xs">⌘</span>K
+          </kbd>
+        </button>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="flex-1 overflow-y-auto py-6 px-3">
+        <!-- Document Links -->
+        <template x-if="!isLoading && !error && docs.length > 0">
+          <div>
+            <template x-for="group in groups" :key="group.title">
+              <div class="mb-6">
+                <div class="mb-2 px-3 text-[11px] font-semibold tracking-wider text-text-muted uppercase" x-text="group.title"></div>
+                <ul class="space-y-0.5">
+                  <template x-for="item in group.items" :key="item.docName || item.title">
+                    <li>
+                      <!-- File -->
+                      <template x-if="item.type === 'file' && item.docObj">
+                        <button @click="loadDoc(item.docObj)" 
+                                class="w-full text-left px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 capitalize rounded-md flex items-center justify-between group"
+                                :class="activeDoc && activeDoc.name === item.docObj.name ? 'text-white bg-white/5' : 'text-text-secondary hover:text-white hover:bg-white/[0.02]'">
+                          <span x-text="item.title || formatName(item.docObj.name)"></span>
+                        </button>
+                      </template>
+                      
+                      <!-- Folder -->
+                      <template x-if="item.type === 'folder'">
+                        <div>
+                          <button @click="item.expanded = !item.expanded; if(item.indexDocObj) loadDoc(item.indexDocObj);" 
+                                  class="w-full text-left px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 capitalize rounded-md flex items-center justify-between group"
+                                  :class="(activeDoc && (activeDoc.name === item.indexDocName || item.children.some(c => c.docName === activeDoc.name))) ? 'text-white bg-white/5' : 'text-text-secondary hover:text-white hover:bg-white/[0.02]'">
+                            <span x-text="item.title"></span>
+                            <svg class="w-3.5 h-3.5 opacity-50 transition-transform duration-200" 
+                                 :class="item.expanded ? 'rotate-90' : ''" 
+                                 fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                          </button>
+                          
+                          <!-- Children -->
+                          <div x-show="item.expanded" 
+                               x-transition:enter="transition ease-out duration-200"
+                               x-transition:enter-start="opacity-0 -translate-y-2"
+                               x-transition:enter-end="opacity-100 translate-y-0"
+                               class="pl-4 mt-1 border-l border-white/5 ml-3 space-y-0.5">
+                            <template x-for="child in item.children" :key="child.docName">
+                              <template x-if="child.docObj">
+                                <button @click="loadDoc(child.docObj)" 
+                                        class="w-full text-left px-3 py-1.5 text-[12px] font-medium transition-colors duration-150 capitalize rounded-md flex items-center justify-between group"
+                                        :class="activeDoc && activeDoc.name === child.docObj.name ? 'text-blue-400 bg-blue-500/10' : 'text-text-muted hover:text-white hover:bg-white/[0.02]'">
+                                  <span x-text="child.title || formatName(child.docObj.name)"></span>
+                                </button>
+                              </template>
+                            </template>
+                          </div>
+                        </div>
+                      </template>
+                    </li>
+                  </template>
+                </ul>
+              </div>
+            </template>
+          </div>
+        </template>
+        
+        <!-- Sidebar Error -->
+        <template x-if="error">
+          <div class="px-3 py-2 text-xs text-red-400 border border-red-500/10 rounded bg-red-500/5">
+            Failed to sync repository.
+          </div>
+        </template>
+      </nav>
+
+      <!-- Footer / External Links -->
+      <div class="p-4 shrink-0">
+        <a href="https://github.com/onurartan/craft" target="_blank" class="flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-text-secondary hover:text-white transition-colors rounded-md hover:bg-white/[0.02]">
+          <svg class="w-4 h-4 opacity-70" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub Repository
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Panel -->
+    <main class="flex-1 flex flex-col h-full bg-background relative overflow-hidden">
+      
+      <!-- Top Navbar -->
+      <nav class="h-14 border-b border-border bg-background/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-10 shrink-0">
+        <div class="flex items-center gap-2 text-[13px] font-medium tracking-tight">
+          <span class="text-text-secondary">Craft</span>
+          <span class="text-border">/</span>
+          <span class="text-text-secondary">Docs</span>
+          <template x-if="activeDoc">
+            <div class="flex items-center gap-2">
+               <span class="text-border">/</span>
+               <span class="text-text-primary capitalize" x-text="formatName(activeDoc.name)"></span>
+               <template x-if="activeDocIsDeprecated">
+                 <span class="px-1.5 py-0.5 ml-2 text-[10px] font-bold tracking-wider text-orange-400 bg-orange-500/10 border border-orange-500/20 rounded-md uppercase">Deprecated</span>
+               </template>
+            </div>
+          </template>
+        </div>
+        <div class="flex items-center">
+          <div class="text-[11px] font-mono text-text-muted px-2 py-0.5 rounded border border-border bg-surface">v0.2.0</div>
+        </div>
+      </nav>
+
+      <!-- Scrollable Document Area -->
+      <div class="flex-1 overflow-y-auto px-6 md:px-16 lg:px-32 py-16 scroll-smooth" id="scroll-container">
+        <div class="max-w-3xl mx-auto">
+          
+          <!-- Fetching Spinner -->
+          <div x-show="isFetchingDoc" x-cloak class="flex flex-col items-center justify-center py-40">
+            <svg class="animate-spin w-5 h-5 text-text-muted" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          </div>
+
+          <!-- Empty State -->
+          <div x-show="error && !isFetchingDoc" x-cloak class="flex flex-col py-32">
+            <div class="w-12 h-12 mb-6 rounded-lg border border-border bg-surface flex items-center justify-center text-text-muted">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <h2 class="text-xl font-semibold text-white mb-2 tracking-tight">Documentation not found</h2>
+            <p class="text-[14px] text-text-secondary leading-relaxed max-w-lg">
+              Unable to fetch the <code class="text-white bg-surface px-1 py-0.5 rounded border border-border">.docs</code> directory from the <code class="text-white bg-surface px-1 py-0.5 rounded border border-border">onurartan/craft</code> repository. Please verify the folder exists on the main branch.
+            </p>
+          </div>
+
+          <!-- Rendered Markdown -->
+          <div x-show="!isFetchingDoc && !error" x-cloak x-transition:enter="fade-enter-active" x-transition:enter-start="fade-enter">
+            <div id="markdown-content" class="prose max-w-none pb-32" x-html="renderedContent"></div>
+          </div>
+          
+        </div>
+      </div>
+    </main>
+
+    <!-- Search Modal (Command K) -->
+    <div x-show="searchOpen" 
+         class="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] sm:pt-[15vh] px-4 pb-4"
+         @keydown.escape.window="searchOpen = false"
+         style="display: none;">
+      
+      <!-- Backdrop -->
+      <div x-show="searchOpen" 
+           x-transition.opacity.duration.300ms
+           @click="searchOpen = false"
+           class="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+      <!-- Modal Panel -->
+      <div x-show="searchOpen" 
+           x-transition:enter="transition ease-out duration-200"
+           x-transition:enter-start="opacity-0 scale-95"
+           x-transition:enter-end="opacity-100 scale-100"
+           x-transition:leave="transition ease-in duration-150"
+           x-transition:leave-start="opacity-100 scale-100"
+           x-transition:leave-end="opacity-0 scale-95"
+           class="relative w-full max-w-2xl bg-[#0A0A0A] border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col"
+           @click.stop>
+        
+        <!-- Search Input -->
+        <div class="flex items-center px-4 py-4 border-b border-white/10 bg-[#050505]">
+          <svg class="w-5 h-5 text-gray-500 mr-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <input x-ref="searchInput" 
+                 x-model="searchQuery" 
+                 type="text" 
+                 class="w-full bg-transparent border-none text-white text-lg placeholder-gray-500 focus:outline-none focus:ring-0" 
+                 placeholder="Search documentation..."
+                 @keydown.down.prevent="searchIndex = (searchIndex + 1) % searchResults.length"
+                 @keydown.up.prevent="searchIndex = searchIndex - 1 < 0 ? searchResults.length - 1 : searchIndex - 1"
+                 @keydown.enter.prevent="if(searchResults.length > 0) { selectSearchResult(searchResults[searchIndex]) }">
+                 
+          <!-- Ask AI Button -->
+          <button @click="performAISearch()" 
+                  x-show="searchQuery.length > 0 && !aiLoading"
+                  class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 mr-3 text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/20 transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            Ask AI
+          </button>
+          
+          <button @click="searchOpen = false" class="shrink-0 px-2 py-1 text-xs font-mono text-gray-500 bg-white/5 border border-white/10 rounded hover:bg-white/10 hover:text-white transition-colors">ESC</button>
+        </div>
+
+        <!-- AI Progress -->
+        <div x-show="aiLoading" class="px-4 py-3 border-b border-white/5 bg-[#0A0A0A] flex flex-col gap-2">
+          <div class="flex justify-between items-center text-[11px] font-medium tracking-wide text-emerald-400 uppercase">
+            <span class="flex items-center gap-2">
+              <svg class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <span x-text="aiStatus">Loading AI Engine...</span>
+            </span>
+            <span x-text="Math.round(aiProgress) + '%'">0%</span>
+          </div>
+          <div class="w-full bg-white/5 rounded-full h-1 overflow-hidden">
+            <div class="bg-emerald-500 h-1 transition-all duration-300" :style="`width: ${aiProgress}%`"></div>
+          </div>
+        </div>
+
+        <!-- AI Disclaimer -->
+        <template x-if="aiReady && searchResults.length > 0 && searchResults[0].title.includes('AI Match')">
+          <div class="px-4 py-2 bg-emerald-500/5 border-b border-emerald-500/10 flex items-center gap-2">
+            <svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <p class="text-[11px] text-emerald-500/80 leading-relaxed">
+              <strong>Local Semantic Search:</strong> This is not a generative AI chat. It uses an in-browser embedding model to understand your query's meaning and finds the most relevant documentation completely offline.
+            </p>
+          </div>
+        </template>
+
+        <!-- Search Results -->
+        <div class="max-h-[60vh] overflow-y-auto custom-scrollbar p-2">
+          
+          <template x-if="searchQuery === ''">
+            <div class="px-4 py-8 text-center text-gray-500 text-[13px]">
+              Start typing to search across all documents.
+            </div>
+          </template>
+
+          <template x-if="searchQuery !== '' && searchResults.length === 0">
+            <div class="px-4 py-8 text-center text-gray-500 text-[13px]">
+              No results found for "<span x-text="searchQuery" class="text-gray-300"></span>"
+            </div>
+          </template>
+
+          <template x-if="searchResults.length > 0">
+            <ul class="space-y-1">
+              <template x-for="(result, index) in searchResults" :key="index">
+                <li>
+                  <button @click="selectSearchResult(result)" 
+                          @mouseover="searchIndex = index"
+                          class="w-full text-left px-4 py-3 rounded-lg flex items-start gap-3 transition-colors"
+                          :class="searchIndex === index ? 'bg-blue-500/10 border border-blue-500/20' : 'hover:bg-white/5 border border-transparent'">
+                    <svg class="w-5 h-5 shrink-0 mt-0.5 opacity-50" :class="searchIndex === index ? 'text-blue-400' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <div>
+                      <div class="text-[14px] font-medium" :class="searchIndex === index ? 'text-blue-400' : 'text-white'" x-text="result.title"></div>
+                      <div class="text-[12px] opacity-60 mt-0.5 line-clamp-2" :class="searchIndex === index ? 'text-blue-200' : 'text-gray-400'" x-text="result.snippet"></div>
+                    </div>
+                  </button>
+                </li>
+              </template>
+            </ul>
+          </template>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // --- CONFIGURATION ---
+    // For testing purposes, set this variable to true to read from the local (.docs) folder.
+    // Note: Due to browser security policies (CORS), fetch requests cannot be made over the file:/// protocol.
+    // To run this page locally, you must serve it using a local server (e.g., python docs/server.py).
+    const USE_LOCAL_DOCS = true;
+    const LOCAL_DOCS_PATH = '../.docs';
+    
+    /* GITHUB API REFERENCE (Production)
+     * Directory List: https://api.github.com/repos/onurartan/craft/contents/.docs
+     * Raw Content: https://raw.githubusercontent.com/onurartan/craft/main/.docs/...
+     */
+
+    function docsApp() {
+      return {
+        docs: [],
+        groups: [],
+        isLoading: true,
+        isFetchingDoc: false,
+        error: false,
+        activeDoc: null,
+        activeDocIsDeprecated: false,
+        renderedContent: '',
+        
+        searchOpen: false,
+        searchQuery: '',
+        searchIndex: 0,
+        searchResults: [],
+        docsContentCache: {},
+        
+        // AI State
+        aiReady: false,
+        aiLoading: false,
+        aiProgress: 0,
+        aiStatus: 'Loading AI Engine...',
+        aiExtractor: null,
+        docsEmbeddings: [],
+
+        async initApp() {
+          // Keyboard shortcut listener (Cmd/Ctrl + K)
+          window.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+              e.preventDefault();
+              this.openSearch();
+            }
+          });
+
+          // Watch search query to trigger search
+          this.$watch('searchQuery', () => {
+            this.performSearch();
+          });
+
+          try {
+            let files = [];
+
+            if (USE_LOCAL_DOCS) {
+              
+              files = [
+                { name: 'getting-started.md', download_url: `${LOCAL_DOCS_PATH}/getting-started.md` },
+                { name: 'architecture.md', download_url: `${LOCAL_DOCS_PATH}/architecture.md` },
+                { name: 'cli-reference.md', download_url: `${LOCAL_DOCS_PATH}/cli-reference.md` },
+                { name: 'configuration/index.md', download_url: `${LOCAL_DOCS_PATH}/configuration/index.md` },
+                { name: 'configuration/commands.md', download_url: `${LOCAL_DOCS_PATH}/configuration/commands.md` },
+                { name: 'core-features/toolchain.md', download_url: `${LOCAL_DOCS_PATH}/core-features/toolchain.md` },
+                { name: 'core-features/hot-reload.md', download_url: `${LOCAL_DOCS_PATH}/core-features/hot-reload.md` },
+                { name: 'core-features/asset-minification.md', download_url: `${LOCAL_DOCS_PATH}/core-features/asset-minification.md` },
+                { name: 'core-features/package-management.md', download_url: `${LOCAL_DOCS_PATH}/core-features/package-management.md` },
+                { name: 'core-features/scaffolding.md', download_url: `${LOCAL_DOCS_PATH}/core-features/scaffolding.md` },
+                { name: 'core-features/task-runner.md', download_url: `${LOCAL_DOCS_PATH}/core-features/task-runner.md` },
+                { name: 'advanced/error-parser.md', download_url: `${LOCAL_DOCS_PATH}/advanced/error-parser.md` },
+                { name: 'advanced/inline-scripting.md', download_url: `${LOCAL_DOCS_PATH}/advanced/inline-scripting.md` },
+                // { name: 'advanced/ui-system-design.md', download_url: `${LOCAL_DOCS_PATH}/advanced/ui-system-design.md` }
+              ];
+            } else {
+              const res = await fetch('https://api.github.com/repos/onurartan/craft/contents/.docs');
+              if (!res.ok) throw new Error('API Rate limit or Missing Folder');
+              files = await res.json();
+            }
+            
+            this.docs = files.filter(f => f.name.endsWith('.md'));
+
+            this.groups = [
+              {
+                title: 'Overview',
+                items: [
+                  { type: 'file', docName: 'getting-started.md', title: 'Getting Started' },
+                  { type: 'file', docName: 'architecture.md', title: 'Architecture' },
+                  { type: 'file', docName: 'cli-reference.md', title: 'CLI Reference' },
+                  { 
+                    type: 'folder', 
+                    title: 'Configuration', 
+                    expanded: false,
+                    indexDocName: 'configuration/index.md',
+                    children: [
+                      { type: 'file', docName: 'configuration/commands.md', title: 'Commands & Tasks' }
+                    ]
+                  }
+                ]
+              },
+              {
+                title: 'Features',
+                items: [
+                  { 
+                    type: 'folder', 
+                    title: 'Core Features', 
+                    expanded: false,
+                    indexDocName: null,
+                    children: [
+                      { type: 'file', docName: 'core-features/toolchain.md', title: 'Toolchain Isolation' },
+                      { type: 'file', docName: 'core-features/hot-reload.md', title: 'Hot Reload' },
+                      { type: 'file', docName: 'core-features/asset-minification.md', title: 'Asset Minifier' },
+                      { type: 'file', docName: 'core-features/package-management.md', title: 'Package Management' },
+                      { type: 'file', docName: 'core-features/scaffolding.md', title: 'Scaffolding' },
+                      { type: 'file', docName: 'core-features/task-runner.md', title: 'Task Runner' }
+                    ]
+                  },
+                  { 
+                    type: 'folder', 
+                    title: 'Advanced', 
+                    expanded: false,
+                    indexDocName: null,
+                    children: [
+                      { type: 'file', docName: 'advanced/error-parser.md', title: 'Error Parser' },
+                      { type: 'file', docName: 'advanced/inline-scripting.md', title: 'Inline Scripting' },
+                      { type: 'file', docName: 'advanced/ui-system-design.md', title: 'UI System Design' }
+                    ]
+                  }
+                ]
+              }
+            ];
+
+            // Resolve doc objects
+            this.groups.forEach(g => {
+              g.items.forEach(item => {
+                if (item.type === 'file') {
+                  item.docObj = this.docs.find(d => d.name === item.docName);
+                } else if (item.type === 'folder') {
+                  item.indexDocObj = this.docs.find(d => d.name === item.indexDocName);
+                  item.children.forEach(child => {
+                    child.docObj = this.docs.find(d => d.name === child.docName);
+                  });
+                }
+              });
+            });
+
+            // Set up hash change listener for browser back/forward buttons
+            window.addEventListener('hashchange', () => {
+              const hash = window.location.hash.replace('#', '');
+              if (hash) {
+                // Determine if hash contains folder structure
+                const targetDoc = this.docs.find(d => d.name === `${hash}.md` || d.name === `${hash}/index.md` || d.name === hash);
+                if (targetDoc && (!this.activeDoc || this.activeDoc.name !== targetDoc.name)) {
+                  this.loadDoc(targetDoc, false);
+                }
+              }
+            });
+
+            // Initial load based on hash
+            const initialHash = window.location.hash.replace('#', '');
+            let docToLoad = this.docs.find(d => d.name === `${initialHash}.md`);
+            
+            if (!docToLoad && this.docs.length > 0) {
+              docToLoad = this.docs[0];
+            }
+
+            if (docToLoad) {
+              await this.loadDoc(docToLoad);
+            } else {
+              this.error = true;
+            }
+
+            // Preload all docs in background for search
+            setTimeout(() => this.preloadAllDocs(), 1000);
+
+          } catch (e) {
+            console.error(e);
+            this.error = true;
+          } finally {
+            this.isLoading = false;
+          }
+        },
+
+        async loadDoc(file, pushState = true, highlightQuery = '') {
+          if (this.activeDoc && this.activeDoc.name === file.name && this.renderedContent !== '' && !highlightQuery) return;
+          
+          this.activeDoc = file;
+          this.isFetchingDoc = true;
+          this.renderedContent = ''; // Clear to trigger animation correctly
+          
+          if (pushState) {
+            let hashName = file.name;
+            if (hashName.endsWith('/index.md')) {
+              hashName = hashName.replace('/index.md', '');
+            } else {
+              hashName = hashName.replace('.md', '');
+            }
+            window.history.pushState(null, null, `#${hashName}`);
+          }
+          
+          const container = document.getElementById('scroll-container');
+          if (container) container.scrollTo({ top: 0 });
+
+          try {
+            const res = await fetch(file.download_url);
+            if (!res.ok) throw new Error('Fetch failed');
+            let rawMd = await res.text();
+            
+            rawMd = this.processGitHubAlerts(rawMd);
+            
+            // Parse YAML Frontmatter
+            this.activeDocIsDeprecated = false;
+            const fmRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/;
+            const match = rawMd.match(fmRegex);
+            if (match) {
+              const fm = match[1];
+              if (fm.includes('deprecated: true')) {
+                this.activeDocIsDeprecated = true;
+              }
+              rawMd = rawMd.replace(fmRegex, '').trim();
+            }
+            
+            // Render via Marked
+            this.renderedContent = marked.parse(rawMd);
+            
+            // Highlight Syntax safely
+            this.$nextTick(() => {
+              if (window.Prism) {
+                // Ensure Prism picks up dynamically added code blocks
+                const codeBlocks = document.querySelectorAll('#markdown-content pre code');
+                codeBlocks.forEach((block) => {
+                  // marked.js puts language class on <code>, prism needs it on both or just <code> is fine, but we also put it on <pre> for css pseudo-elements
+                  const langClass = block.className.match(/language-(\w+)/);
+                  if (langClass) {
+                    block.parentElement.classList.add(langClass[0]);
+                    block.parentElement.setAttribute('data-language', langClass[1]);
+                  }
+                  
+                  // Inject Copy Button
+                  if (!block.parentElement.querySelector('.copy-btn')) {
+                    const btn = document.createElement('button');
+                    btn.className = 'copy-btn absolute top-2 right-2 p-1.5 rounded-md bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all duration-200 opacity-0 group-hover:opacity-100 focus:opacity-100 z-10 cursor-pointer';
+                    btn.title = 'Copy to clipboard';
+                    btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>';
+                    btn.onclick = () => {
+                      navigator.clipboard.writeText(block.textContent).then(() => {
+                        const origHTML = btn.innerHTML;
+                        btn.innerHTML = '<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+                        btn.classList.add('bg-emerald-500/10', 'border-emerald-500/20');
+                        setTimeout(() => {
+                          btn.innerHTML = origHTML;
+                          btn.classList.remove('bg-emerald-500/10', 'border-emerald-500/20');
+                        }, 2000);
+                      });
+                    };
+                    block.parentElement.classList.add('group');
+                    block.parentElement.appendChild(btn);
+                  }
+                });
+                Prism.highlightAllUnder(document.getElementById('markdown-content'));
+              }
+              
+              // Scroll to highlight query
+              if (highlightQuery) {
+                // Wait longer to ensure Prism.js and Marked.js have completely finished DOM manipulations
+                setTimeout(() => {
+                  const elements = document.querySelectorAll('#markdown-content p, #markdown-content h1, #markdown-content h2, #markdown-content h3, #markdown-content li, #markdown-content td');
+                  let targetEl = null;
+                  
+                  // Bulletproof matching: Ignore ALL whitespace, punctuation, and HTML tags
+                  const normalizedQuery = highlightQuery.replace(/[^a-z0-9]/gi, '');
+                  
+                  for(let el of elements) {
+                    const normalizedElText = el.textContent.toLowerCase().replace(/[^a-z0-9]/gi, '');
+                    if (normalizedQuery.length > 10 && normalizedElText.includes(normalizedQuery)) {
+                      targetEl = el;
+                      break;
+                    }
+                  }
+                  
+                  if (targetEl) {
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    
+                    // Add a temporary, professional glow effect
+                    const originalBg = targetEl.style.backgroundColor;
+                    const originalBorder = targetEl.style.borderLeft;
+                    const originalPadding = targetEl.style.paddingLeft;
+                    const originalRadius = targetEl.style.borderRadius;
+                    const originalTrans = targetEl.style.transition;
+                    
+                    targetEl.style.transition = 'all 0.4s ease-out';
+                    targetEl.style.backgroundColor = 'rgba(16, 185, 129, 0.1)'; // Emerald tint for AI
+                    targetEl.style.borderLeft = '3px solid rgba(16, 185, 129, 0.8)';
+                    targetEl.style.paddingLeft = '12px';
+                    targetEl.style.borderRadius = '0 6px 6px 0';
+                    
+                    setTimeout(() => {
+                      targetEl.style.transition = 'all 1s ease-in';
+                      targetEl.style.backgroundColor = originalBg;
+                      targetEl.style.borderLeft = originalBorder;
+                      targetEl.style.paddingLeft = originalPadding;
+                      targetEl.style.borderRadius = originalRadius;
+                      setTimeout(() => {
+                        targetEl.style.transition = originalTrans;
+                      }, 1000);
+                    }, 2500);
+                  }
+                }, 150);
+              }
+            });
+          } catch (e) {
+            console.error(e);
+            this.renderedContent = `<div class="p-4 rounded-md border border-red-500/20 bg-red-500/5 text-sm text-red-400">Failed to render: ${e.message}</div>`;
+          } finally {
+            this.isFetchingDoc = false;
+          }
+        },
+
+        formatName(filename) {
+          if (!filename) return '';
+          let parts = filename.split('/');
+          let name = parts[parts.length - 1];
+          if (name === 'index.md' && parts.length > 1) {
+            name = parts[parts.length - 2];
+          } else {
+            name = name.replace('.md', '');
+          }
+          return name.replace(/-/g, ' ');
+        },
+
+        openSearch() {
+          this.searchOpen = true;
+          this.searchQuery = '';
+          this.searchIndex = 0;
+          this.searchResults = [];
+          setTimeout(() => this.$refs.searchInput.focus(), 50);
+        },
+
+        async preloadAllDocs() {
+          for (const doc of this.docs) {
+            try {
+              const res = await fetch(doc.download_url);
+              if (res.ok) {
+                const text = await res.text();
+                this.docsContentCache[doc.name] = {
+                  title: this.formatName(doc.name),
+                  docObj: doc,
+                  content: text.toLowerCase()
+                };
+              }
+            } catch (e) {
+              // Ignore preloading errors
+            }
+          }
+        },
+
+        performSearch() {
+          this.searchIndex = 0;
+          const q = this.searchQuery.toLowerCase().trim();
+          if (!q) {
+            this.searchResults = [];
+            return;
+          }
+
+          const results = [];
+          for (const name in this.docsContentCache) {
+            const item = this.docsContentCache[name];
+            // Clean markdown characters for snippet display
+            const cleanContent = item.content.replace(/[#*`>\-]/g, ' ').replace(/\s+/g, ' ');
+            const matchIndex = cleanContent.indexOf(q);
+            
+            // Match in title or content
+            if (item.title.toLowerCase().includes(q) || matchIndex !== -1) {
+              let snippet = "Matches document title";
+              if (matchIndex !== -1) {
+                const start = Math.max(0, matchIndex - 40);
+                const end = Math.min(cleanContent.length, matchIndex + q.length + 50);
+                let textSnippet = cleanContent.substring(start, end).trim();
+                
+                // Highlight the searched term safely
+                const regex = new RegExp(`(${q})`, 'gi');
+                textSnippet = textSnippet.replace(regex, '<mark class="bg-yellow-500/20 text-yellow-200 px-0.5 rounded-sm bg-transparent">$1</mark>');
+                
+                snippet = `<span class="opacity-30">...</span> ${textSnippet} <span class="opacity-30">...</span>`;
+              }
+              results.push({
+                title: item.title,
+                snippet: snippet,
+                docObj: item.docObj,
+                query: q
+              });
+            }
+          }
+          this.searchResults = results;
+        },
+
+        selectSearchResult(result) {
+          this.loadDoc(result.docObj, true, result.query);
+          this.searchOpen = false;
+        },
+
+        async performAISearch() {
+          if (!this.searchQuery) return;
+          
+          if (!this.aiReady) {
+            this.aiLoading = true;
+            try {
+              // Dynamically load transformers.js only when clicked
+              const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+              env.allowLocalModels = false;
+              
+              this.aiExtractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
+                progress_callback: (x) => {
+                  if (x.status === 'downloading') {
+                    this.aiStatus = `Downloading model (${x.file})...`;
+                    this.aiProgress = x.progress || 0;
+                  } else if (x.status === 'init') {
+                    this.aiStatus = 'Initializing engine...';
+                    this.aiProgress = 100;
+                  }
+                }
+              });
+              
+              // Check localStorage for cached embeddings
+              const cachedEmbeddings = localStorage.getItem('craft_ai_embeddings');
+              if (cachedEmbeddings) {
+                this.aiStatus = 'Loading cached index...';
+                const parsed = JSON.parse(cachedEmbeddings);
+                this.docsEmbeddings = parsed.map(item => ({
+                  ...item,
+                  vector: new Float32Array(item.vector)
+                }));
+              } else {
+                // Prepare embeddings for all docs
+                this.aiStatus = 'Indexing documentation...';
+                this.aiProgress = 100;
+                this.docsEmbeddings = [];
+                for (const name in this.docsContentCache) {
+                  const item = this.docsContentCache[name];
+                  // Segment by double newline (paragraphs)
+                  const paragraphs = item.content.split(/\n\s*\n/).filter(p => p.length > 50);
+                  for (const p of paragraphs) {
+                    // extract features
+                    const output = await this.aiExtractor(p, { pooling: 'mean', normalize: true });
+                    this.docsEmbeddings.push({
+                      docObj: item.docObj,
+                      title: item.title,
+                      text: p,
+                      vector: Array.from(output.data) // Convert to standard array for JSON
+                    });
+                  }
+                }
+                
+                // Save to localStorage
+                try {
+                  localStorage.setItem('craft_ai_embeddings', JSON.stringify(this.docsEmbeddings));
+                } catch(e) { console.warn('localStorage full'); }
+                
+                // Restore Float32Array for math
+                this.docsEmbeddings.forEach(item => {
+                  item.vector = new Float32Array(item.vector);
+                });
+              }
+              
+              this.aiReady = true;
+            } catch (e) {
+              console.error(e);
+              this.aiStatus = 'Error loading AI!';
+              setTimeout(() => this.aiLoading = false, 2000);
+              return;
+            } finally {
+              this.aiLoading = false;
+            }
+          }
+          
+          if (!this.aiReady) return;
+          
+          // Compute query embedding
+          const qOutput = await this.aiExtractor(this.searchQuery.toLowerCase().trim(), { pooling: 'mean', normalize: true });
+          const qVector = qOutput.data;
+          
+          // Cosine similarity
+          const dotProduct = (a, b) => a.reduce((sum, val, i) => sum + val * b[i], 0);
+          
+          for (const item of this.docsEmbeddings) {
+            item.score = dotProduct(qVector, item.vector);
+          }
+          
+          // Sort by highest score
+          this.docsEmbeddings.sort((a, b) => b.score - a.score);
+          
+          // Format top 3 semantic results
+          const topResults = this.docsEmbeddings.slice(0, 3).filter(r => r.score > 0.1);
+          
+          this.searchResults = topResults.map(r => {
+            const cleanText = r.text.replace(/[#*`>\-]/g, ' ').replace(/\s+/g, ' ');
+            
+            // Generate a bulletproof target string (only letters & numbers) to guarantee DOM match
+            const alphanumericOnly = r.text.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const targetScrollText = alphanumericOnly.substring(0, 50); 
+            
+            const cleanSnippet = cleanText.substring(0, 150).trim() + "...";
+            return {
+              title: r.title + ` (AI Match: ${Math.round(r.score*100)}%)`,
+              snippet: `<span class="px-1 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 mr-2 border border-emerald-500/20">AI RESULT</span> ` + cleanSnippet,
+              docObj: r.docObj,
+              query: targetScrollText // Bulletproof targeting
+            }
+          });
+          this.searchIndex = 0;
+        },
+
+        processGitHubAlerts(markdown) {
+          const alertRegex = />\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\n(?:>.*\n?)*/gi;
+          
+          return markdown.replace(alertRegex, (match) => {
+            const lines = match.split('\n');
+            const typeMatch = lines[0].match(/\[!(.*?)\]/i);
+            const type = typeMatch ? typeMatch[1].toUpperCase() : 'NOTE';
+            
+            lines.shift(); 
+            const content = lines.map(line => line.replace(/^>\s?/, '')).join('\n').trim();
+            
+            // Sleek Linear-style alerts
+            const styles = {
+              NOTE: 'border-blue-500/20 text-blue-400',
+              TIP: 'border-emerald-500/20 text-emerald-400',
+              IMPORTANT: 'border-purple-500/20 text-purple-400',
+              WARNING: 'border-amber-500/20 text-amber-400',
+              CAUTION: 'border-red-500/20 text-red-400'
+            };
+            
+            const icons = {
+              NOTE: `<svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+              TIP: `<svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>`,
+              IMPORTANT: `<svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>`,
+              WARNING: `<svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`,
+              CAUTION: `<svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
+            };
+            
+            const style = styles[type] || styles['NOTE'];
+            const iconColor = style.split(' ')[1]; // extract text color
+            const icon = icons[type] || icons['NOTE'];
+            
+            const parsedContent = marked.parse(content);
+
+            // Returns a sleek box with a left border and completely transparent body like Linear
+            return `\n<div class="my-8 px-4 py-4 border-l-2 ${style} bg-[#0A0A0A] flex gap-3">\n<div class="shrink-0 mt-0.5 ${iconColor}">${icon}</div>\n<div class="text-[14px] text-[#888] leading-relaxed [&>p]:mb-0 [&>p]:mt-0 w-full prose-p:mb-0">${parsedContent}</div>\n</div>\n`;
+          });
+        }
+      }
+    }
+  </script>
+</body>
+</html>

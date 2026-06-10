@@ -18,74 +18,85 @@ var UI = &uiAPI{}
 // PrintBanner renders the minimalist identity of the tool.
 func (u *uiAPI) PrintBanner() {
 	pterm.Println()
-	pterm.Printf("%s %s\n",
-		pterm.NewStyle(pterm.FgCyan, pterm.Bold).Sprint("CRAFT"),
-		pterm.FgGray.Sprintf("v%s", CraftAppVersion),
+	pterm.Printf("▲ %s %s\n\n",
+		pterm.NewStyle(pterm.FgCyan, pterm.Bold).Sprint("Craft"),
+		pterm.FgDarkGray.Sprintf("v%s", CraftAppVersion),
 	)
 }
 
-// PrintInfo displays the current build configuration in a clean table.
+// PrintInfo displays the current build configuration cleanly.
 func (u *uiAPI) PrintInfo(targetCount int) {
 	cfg := AppConfig
 
 	data := [][]string{
-		{"Project", pterm.FgCyan.Sprint(cfg.Name)},
-		{"Version", pterm.FgMagenta.Sprint(cfg.Version)},
-		{"Output", pterm.FgGray.Sprint(cfg.OutputDir)},
+		{pterm.FgDarkGray.Sprint("Project"), pterm.FgLightCyan.Sprint(cfg.Name)},
+		{pterm.FgDarkGray.Sprint("Version"), pterm.FgLightMagenta.Sprint(cfg.Version)},
+		{pterm.FgDarkGray.Sprint("Output"), pterm.FgWhite.Sprint(cfg.OutputDir)},
 	}
 
 	if cfg.VersionPkg != "" {
-		data = append(data, []string{"Inject", pterm.FgYellow.Sprint(cfg.VersionPkg)})
+		data = append(data, []string{pterm.FgDarkGray.Sprint("Inject"), pterm.FgLightYellow.Sprint(cfg.VersionPkg)})
 	}
 
-	tagStr := pterm.FgGray.Sprint("None")
+	tagStr := pterm.FgDarkGray.Sprint("-")
 	if len(cfg.Tags) > 0 {
-		tagStr = pterm.FgCyan.Sprint(strings.Join(cfg.Tags, ", "))
+		tagStr = pterm.FgLightCyan.Sprint(strings.Join(cfg.Tags, ", "))
 	}
-	data = append(data, []string{"Tags", tagStr})
+	data = append(data, []string{pterm.FgDarkGray.Sprint("Tags"), tagStr})
 
-	cgoStatus := pterm.FgRed.Sprint("Off")
+	cgoStatus := pterm.FgDarkGray.Sprint("Off")
 	if cfg.CgoEnabled {
-		cgoStatus = pterm.FgGreen.Sprint("On")
+		cgoStatus = pterm.FgLightGreen.Sprint("On")
 	}
-	data = append(data, []string{"CGO", cgoStatus})
-	data = append(data, []string{"Targets", fmt.Sprintf("%d Platform(s)", targetCount)})
+	data = append(data, []string{pterm.FgDarkGray.Sprint("CGO"), cgoStatus})
+	data = append(data, []string{pterm.FgDarkGray.Sprint("Targets"), fmt.Sprintf("%d Platform(s)", targetCount)})
 
-	pterm.DefaultTable.WithData(data).WithBoxed().Render()
+	pterm.DefaultTable.WithData(data).WithSeparator("   ").Render()
 }
 
 // PrintSummary renders a comprehensive final report of the build cycle.
 func (u *uiAPI) PrintSummary(results []BuildResult, totalTime time.Duration) {
 	pterm.Println()
-	pterm.DefaultSection.Println("Build Summary")
+	pterm.Printf("%s\n", pterm.NewStyle(pterm.FgCyan, pterm.Bold).Sprint("▶ Build Summary"))
+	pterm.Println()
 
 	tableData := [][]string{
-		{"PLATFORM", "STATUS", "SIZE", "TIME", "ARTIFACT"},
+		{
+			pterm.FgDarkGray.Sprint("PLATFORM"),
+			pterm.FgDarkGray.Sprint("STATUS"),
+			pterm.FgDarkGray.Sprint("SIZE"),
+			pterm.FgDarkGray.Sprint("TIME"),
+			pterm.FgDarkGray.Sprint("ARTIFACT"),
+		},
 	}
 
 	for _, r := range results {
+		status := r.Status // usually SUCCESS or FAIL colored
 		tableData = append(tableData, []string{
-			pterm.FgCyan.Sprint(r.Platform),
-			r.Status,
-			pterm.FgMagenta.Sprint(r.Size),
-			pterm.FgGray.Sprint(r.Duration.Round(time.Millisecond)),
-			pterm.FgLightWhite.Sprint(r.Artifact),
+			pterm.FgLightCyan.Sprint(r.Platform),
+			status,
+			pterm.FgLightMagenta.Sprint(r.Size),
+			pterm.FgDarkGray.Sprint(r.Duration.Round(time.Millisecond)),
+			pterm.FgWhite.Sprint(r.Artifact),
 		})
 	}
 
-	pterm.DefaultTable.WithHasHeader().WithBoxed().WithData(tableData).Render()
+	pterm.DefaultTable.WithHasHeader().WithData(tableData).WithSeparator("   ").Render()
 
-	// Error reporting for failed targets
+	// Print errors gracefully if any
 	for _, r := range results {
 		if r.ErrorMsg != "" {
 			pterm.Println()
-			pterm.DefaultBox.
-				WithTitle(pterm.FgRed.Sprintf("Failure [%s]", r.Platform)).
-				Println(pterm.FgRed.Sprint(r.ErrorMsg))
+			// Instead of a box, use our custom error parser
+			PrintParsedError(r.Platform, r.ErrorMsg)
 		}
 	}
 
-	pterm.Info.Printf("Total execution: %s\n\n", pterm.FgCyan.Sprint(totalTime.Round(time.Millisecond)))
+	pterm.Println()
+	pterm.Printf("%s %s\n\n",
+		pterm.FgDarkGray.Sprint("Done in"),
+		pterm.FgLightCyan.Sprint(totalTime.Round(time.Millisecond)),
+	)
 }
 
 // FormatSize converts bytes to a human-readable professional format.

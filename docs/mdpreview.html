@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Craft Markdown Preview</title>
+  
+  <!-- Tailwind CSS with Typography Plugin -->
+  <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+  
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  
+  <!-- Prism Syntax Highlighting (Dark Theme) -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          },
+          colors: {
+            background: '#000000'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { 
+      background-color: #000; 
+      color: #ededed; 
+      -webkit-font-smoothing: antialiased; 
+    }
+    ::selection { background: rgba(255,255,255,0.15); color: #fff; }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+    /* Fix Prism code blocks within Tailwind Prose */
+    .prose pre {
+      background-color: #0A0A0A !important;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+    }
+    .prose code {
+      font-family: 'JetBrains Mono', monospace !important;
+    }
+    .prose :where(code):not(:where([class~="not-prose"] *))::before { content: "" !important; }
+    .prose :where(code):not(:where([class~="not-prose"] *))::after { content: "" !important; }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+  <script>
+    // Define the component globally to avoid any Alpine.data timing issues
+    function previewApp() {
+      return {
+        renderedContent: '',
+        
+        initApp() {
+          const rawMd = document.getElementById('raw-markdown').textContent;
+          // Check if it's still the exact placeholder by splitting it to avoid the server's blind replace
+          const placeholder = '{{' + 'MARKDOWN_CONTENT' + '}}';
+          if (rawMd === placeholder || !rawMd.trim()) {
+            this.renderedContent = '<div class="text-center text-gray-500 mt-20">No markdown content provided.</div>';
+            return;
+          }
+          
+          try {
+            // Parse GitHub Alerts
+            let processedMd = rawMd.replace(/>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\n((?:>.*\n)*)/gi, (match, type, content) => {
+              const types = {
+                'NOTE': { color: 'blue', icon: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+                'TIP': { color: 'emerald', icon: 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z' },
+                'IMPORTANT': { color: 'purple', icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
+                'WARNING': { color: 'amber', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' },
+                'CAUTION': { color: 'red', icon: 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' }
+              };
+              const t = types[type.toUpperCase()] || types['NOTE'];
+              const cleanContent = content.replace(/^>\s?/gm, '');
+              
+              return `\n<div class="my-6 px-4 py-3 rounded-lg bg-${t.color}-500/10 border border-${t.color}-500/20 not-prose">
+                <div class="flex items-center gap-2 mb-2">
+                  <svg class="w-4 h-4 text-${t.color}-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${t.icon}"></path></svg>
+                  <span class="text-${t.color}-400 font-semibold text-[13px] tracking-wide uppercase">${type}</span>
+                </div>
+                <div class="text-${t.color}-100/70 text-[14px] leading-relaxed">${marked.parse(cleanContent)}</div>
+              </div>\n`;
+            });
+
+            this.renderedContent = marked.parse(processedMd);
+            
+            this.$nextTick(() => {
+              if (window.Prism) {
+                const codeBlocks = document.querySelectorAll('#markdown-content pre code');
+                codeBlocks.forEach((block) => {
+                  const langClass = block.className.match(/language-(\w+)/);
+                  if (langClass) {
+                    block.parentElement.classList.add(langClass[0]);
+                  }
+                });
+                Prism.highlightAllUnder(document.getElementById('markdown-content'));
+              }
+            });
+          } catch (e) {
+            this.renderedContent = `<div class="text-red-500">Failed to parse Markdown: ${e.message}</div>`;
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Main Content -->
+  <main x-data="previewApp()" x-init="initApp()" class="flex-1 w-full max-w-3xl mx-auto px-6 py-12">
+    <div id="markdown-content" class="prose prose-invert prose-blue max-w-none" x-html="renderedContent">
+      <div class="flex items-center justify-center py-20 text-gray-500">
+        <svg class="animate-spin w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        Rendering...
+      </div>
+    </div>
+  </main>
+
+  <!-- RAW MARKDOWN INJECTION POINT -->
+  <script id="raw-markdown" type="text/markdown">{{MARKDOWN_CONTENT}}</script>
+
+</body>
+</html>

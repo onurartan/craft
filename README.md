@@ -1,17 +1,20 @@
 # Craft
 
-A declarative, minimalist build utility and orchestrator for Go projects. 
+A declarative, minimalist build utility, orchestrator, and **Task Runner** for Go projects. 
 
-Craft bridges the gap between basic `go build` commands and complex release pipelines. It harnesses the raw power of the native Go toolchain and wraps it in a seamless, cross-platform build experience with intelligent hot-reloading and dynamic version injection.
+📚 **Official Documentation:** [craft.trymagic.xyz](https://craft.trymagic.xyz)
+
+Craft bridges the gap between basic `go build` commands and complex release pipelines. It harnesses the raw power of the native Go toolchain and wraps it in a seamless, cross-platform experience featuring **Toolchain Isolation**, **Intelligent Hot-Reloading**, and an advanced **Macro Engine**.
 
 ## Why Craft?
 
-The Go toolchain is incredibly powerful, but orchestrating multi-platform releases, managing LDFLAGS for versioning, and setting up hot-reloading often requires juggling environment variables and writing custom shell scripts. Craft simplifies this entire workflow:
+The Go toolchain is incredibly powerful, but orchestrating multi-platform releases, managing environments across teams, and setting up complex scripts often requires juggling Makefiles, bash scripts, and environment variables. Craft simplifies this entire workflow:
 
-* **Declarative Configuration:** Define your build targets, flags, and optimization rules in a single, readable `.craft.yaml` file.
+* **Zero-Install Toolchains:** Craft automatically downloads, caches, and completely isolates the exact Go version your project needs (e.g., `go1.25.0`) in `~/.craft/toolchains`. No more "It works on my machine" conflicts.
+* **Built-in Task Runner:** Toss out your `Makefile` or `package.json`. Define sequential, OS-specific tasks with advanced Macro interpolation (`{OS}`, `{APP_BIN_PATH}`) directly in `.craft.yaml`.
+* **Smart Package Management:** Use `craft add gh:gofiber/fiber/v2` to seamlessly download packages using intelligent registry shortcuts, completely synced with your isolated environment.
+* **Zero-Config Hot Reload:** Built-in `dev` engine intelligently watches your files, triggers your custom hooks, and restarts your server in milliseconds.
 * **Frictionless Cross-Compilation:** Compile for multiple OS/Arch targets concurrently without manually exporting `GOOS` or `GOARCH`.
-* **Build Profiles:** Define specific workflows (e.g., `npm`, `release`, `local`) to override configurations dynamically based on your target environment.
-* **Zero-Config Hot Reload:** Built-in `dev` engine that intelligently watches your files and isolates temporary builds for rapid development.
 
 ## Installation
 
@@ -19,7 +22,7 @@ Since Craft is built with Go, you can install it globally using the native toolc
 
 ```bash
 go install github.com/onurartan/craft@latest
-````
+```
 
 ## Quick Start
 
@@ -37,73 +40,92 @@ craft build
 
 ## Configuration (`.craft.yaml`)
 
-Craft relies on a strictly typed YAML configuration. Below is a standard configuration demonstrating dynamic version extraction and compiler optimizations.
+Craft relies on a strictly typed YAML configuration. Below is a standard configuration demonstrating dynamic version extraction, isolated toolchains, and the powerful Task Runner.
 
 ```yaml
 name: "app"
+version: 0.1.0
+toolchain: "go1.25.0"   # Craft will auto-download and isolate this version!
 entry_point: "."
 output_dir: "bin"       
-exact_name: false        
 
-# Dynamically extract version from a Go file and inject it via LDFLAGS
-version: "in_go:main.AppVersion"        
-version_pkg: "main.Version"         
-
+# Build Profiles
 build_all: false        
 platforms: ["current"] 
 
-# Compiler optimizations for production
-strip_debug: true       
-trimpath: true          
-cgo_enabled: false      
+# The Task Runner Engine
+commands:
+  envs:
+    DB_USER: "admin"
+  
+  # 1. OS-Specific commands
+  clean:
+    windows: "del /Q /S bin\\*"
+    default: "rm -rf bin/*"
+    
+  # 2. Macros & Composition
+  migrate: "{APP_BIN_PATH:NOBUILD} migrate --user {DB_USER}"
+  
+  setup:
+    - "$clean"
+    - "$migrate"
+    - "echo 'Project {APP_NAME} is ready on {OS}!'"
 ```
 
 ## Build Profiles (Workflow Routing)
 
-Managing different deployment targets usually means writing multiple scripts or memorizing long command-line flags. Craft simplifies this with **Profiles**. A profile allows you to override your base configuration for specific scenarios.
+Managing different deployment targets usually means writing multiple scripts. Craft simplifies this with **Profiles**. A profile allows you to override your base configuration for specific scenarios.
 
 Add a `profiles` block to your `.craft.yaml`:
 
 ```yaml
 profiles:
-  npm:
-    output_dir: "npm/bin"  
-    build_all: true        
-    exact_name: false
-  
   release:
     output_dir: "releases/v1"
     platforms: ["linux/amd64", "windows/amd64"]
     strip_debug: true
 ```
 
-Trigger a specific profile using the `-P` or `--profile` flag. Craft will automatically route the artifacts to the designated directories:
+Trigger a specific profile using the `-P` or `--profile` flag:
 
 ```bash
 $ craft build -P release
 ```
+
+## Advanced Features
+
+### 1. Toolchain Dashboard
+Craft provides an interactive terminal UI to manage your downloaded Go compilers.
+```bash
+$ craft toolchain
+$ craft toolchain install 1.25.0 --remote
+```
+
+### 2. Inline Scripting
+Run single `.go` files like python scripts, fully isolated and instantly cached.
+```bash
+$ craft run script.go --script
+```
+
+### 3. Error Parser & Semantic Search
+Craft features a revolutionary error parser that translates cryptic compiler panics into human-readable advice. It also includes an offline Semantic Search engine for its documentation!
 
 ## Command Reference
 
 Craft acts as a unified interface for your daily Go workflows.
 
 ### Core Engine
-
   * `craft build` - Orchestrates the compilation process based on `.craft.yaml`.
-  * `craft dev` - Starts the hot-reload development engine. It compiles to a secure temporary directory and refreshes on file changes.
-  * `craft run` - Bypasses cross-compilation to build and execute the binary explicitly for your current host architecture.
-  * `craft clean` - Deep cleans build artifacts (`bin/`) and sweeps any zombie temporary files left by the dev engine.
-  * `craft doctor` - Prints a diagnostic report of your Go toolchain, host context, and OS-specific limits.
+  * `craft dev` - Starts the hot-reload development engine. 
+  * `craft run` - Compiles and executes the binary for your current host architecture.
+  * `craft clean` - Deep cleans build artifacts (`bin/`) and global go caches.
+  * `craft doctor` - Prints a diagnostic report of your Go toolchain and system health.
 
-### Toolchain Wrappers
-
-Craft intercepts raw Go toolchain outputs and formats them into a clean, human-readable tree structure. You can pass standard Go flags to these commands.
-
-  * `craft check` - The CI/CD pre-flight sequence. Runs `fmt`, `vet`, and `test` sequentially. Halts on any failure.
-  * `craft fmt` - Runs `go fmt`
-  * `craft vet` - Runs `go vet`
-  * `craft test` - Runs `go test`
-  * `craft tidy` - Runs `go mod tidy`
+### Toolchain & Package Wrappers
+  * `craft toolchain` - Manage, download, and isolate Go compiler versions.
+  * `craft add <pkg>` - Smart package downloader with GitHub (`gh:`) aliases.
+  * `craft sync` - Forcefully download missing modules and verify cryptographic checksums.
+  * `craft check` - The CI/CD pre-flight sequence. Runs `fmt`, `vet`, and `test` sequentially. 
 
 ## Built for Production
 
@@ -111,4 +133,4 @@ From local development to automated CI/CD pipelines, Craft is engineered to fail
 
 ## License
 
-MIT License. See [LICENSE](https://www.google.com/search?q=LICENSE) for more information.
+MIT License. See [LICENSE](https://github.com/onurartan/craft/blob/main/LICENSE) for more information.

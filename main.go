@@ -43,13 +43,14 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
-var CraftAppVersion = "0.0.1" // Default version, can be overridden via LDFLAGS
+var CraftAppVersion = "1.0.0-beta" // Default version, can be overridden via LDFLAGS
 
 var (
 	flagName      string
@@ -66,10 +67,55 @@ var (
 	flagGoCache  bool
 	flagCleanAll bool
 
+	flagNoAutoInstall bool
+	flagVerbose       bool
+	flagScript        bool
+
 	activeCmd *cobra.Command
+
+	createCmd = &cobra.Command{
+		Use:     "create",
+		Short:   "Interactively scaffold a new Craft project",
+		GroupID: "core",
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := ExecuteCreateProcess(); err != nil {
+				pterm.Error.Printf("Failed to create project: %v\n", err)
+				os.Exit(1)
+			}
+		},
+	}
 )
 
 func main() {
+	if len(os.Args) == 2 && (os.Args[1] == "--version" || os.Args[1] == "-v") {
+		pterm.Printf("Craft Build Engine %s\n", pterm.FgCyan.Sprint(CraftAppVersion))
+		os.Exit(0)
+	}
+
+	pterm.Info.Prefix = pterm.Prefix{Text: "i", Style: pterm.NewStyle(pterm.FgLightCyan, pterm.Bold)}
+	pterm.Info.MessageStyle = pterm.NewStyle(pterm.FgWhite)
+
+	pterm.Success.Prefix = pterm.Prefix{Text: "✓", Style: pterm.NewStyle(pterm.FgLightGreen)}
+	pterm.Success.MessageStyle = pterm.NewStyle(pterm.FgWhite)
+
+	pterm.Error.Prefix = pterm.Prefix{Text: "✖", Style: pterm.NewStyle(pterm.FgLightRed)}
+	pterm.Error.MessageStyle = pterm.NewStyle(pterm.FgWhite)
+
+	pterm.Warning.Prefix = pterm.Prefix{Text: "⚠", Style: pterm.NewStyle(pterm.FgLightYellow)}
+	pterm.Warning.MessageStyle = pterm.NewStyle(pterm.FgWhite)
+
+	// Override DefaultSpinner globally
+	pterm.DefaultSpinner.Sequence = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+	pterm.DefaultSpinner.RemoveWhenDone = true
+	pterm.DefaultSpinner.MessageStyle = pterm.NewStyle(pterm.FgWhite)
+
+	// Override Interactive Inputs globally
+	pterm.DefaultInteractiveSelect.DefaultText = pterm.FgLightCyan.Sprint("?")
+	pterm.DefaultInteractiveSelect.TextStyle = pterm.NewStyle(pterm.FgWhite)
+
+	pterm.DefaultInteractiveTextInput.DefaultText = pterm.FgLightCyan.Sprint("?")
+	pterm.DefaultInteractiveTextInput.TextStyle = pterm.NewStyle(pterm.FgWhite)
+
 	// Root command: Default behavior is to initiate a full build.
 	rootCmd := &cobra.Command{
 		Use:   "craft",
@@ -86,137 +132,10 @@ func main() {
 		},
 	}
 
-	// Command registration
-	initCmd := &cobra.Command{
-		Use:   "init [name]",
-		Short: "Smart initialization of " + ConfigFileName,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			UI.PrintBanner()
-			return ExecuteInitProcess(args)
-		},
-	}
-
-	buildCmd := &cobra.Command{
-		Use:   "build",
-		Short: "Compile the project artifacts",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return executeBuildProcess(false)
-		},
-	}
-
-	runCmd := &cobra.Command{
-		Use:   "run",
-		Short: "Compile and execute current host binary",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return executeRunProcess(args)
-		},
-	}
-
-	irunCmd := &cobra.Command{
-		Use:   "irun",
-		Short: "Execute existing binary immediately",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return executeIRunProcess(args)
-		},
-	}
-
-	devCmd := &cobra.Command{
-		Use:   "dev",
-		Short: "Run in development mode (Hot-Reload)",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return executeDevProcess(args)
-		},
-	}
-
-	cleanCmd := &cobra.Command{
-		Use:   "clean",
-		Short: "Deep clean artifacts and Go cache",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			UI.PrintBanner()
-			return ExecuteCleanProcess(flagGoCache, flagCleanAll)
-		},
-	}
-
-	cleanCmd.Flags().BoolVar(&flagGoCache, "go-cache", false, "Force purge global Go build cache")
-	cleanCmd.Flags().BoolVar(&flagCleanAll, "all", false, "Purge all craft-dev temporary artifacts globally")
-
-	checkCmd := &cobra.Command{
-		Use:   "check",
-		Short: "Run CI/CD prep (fmt, vet, test)",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			UI.PrintBanner()
-			return ExecuteCheckProcess()
-		},
-	}
-
-	doctorCmd := &cobra.Command{
-		Use:   "doctor",
-		Short: "Diagnose system and configuration health",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			UI.PrintBanner()
-			return ExecuteDoctorProcess()
-		},
-	}
-
-	// --- Go Toolchain Wrappers ---
-
-	tidyCmd := &cobra.Command{
-		Use:   "tidy",
-		Short: "Synchronize module dependencies",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return ExecuteTidyProcess()
-		},
-	}
-
-	fmtCmd := &cobra.Command{
-		Use:                "fmt",
-		Short:              "Format Go source code",
-		DisableFlagParsing: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return ExecuteFmtProcess(args...)
-		},
-	}
-
-	vetCmd := &cobra.Command{
-		Use:                "vet",
-		Short:              "Run static analysis",
-		DisableFlagParsing: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return ExecuteVetProcess(args...)
-		},
-	}
-
-	testCmd := &cobra.Command{
-		Use:                "test [packages/flags...]",
-		Short:              "Execute test suites",
-		DisableFlagParsing: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return ExecuteTestProcess(args...)
-		},
-	}
-
-	genCmd := &cobra.Command{
-		Use:                "gen",
-		Short:              "Run code generation",
-		DisableFlagParsing: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return ExecuteGenerateProcess(args...)
-		},
-	}
-
-	installCmd := &cobra.Command{
-		Use:   "install",
-		Short: "Install binary to GOBIN",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return ExecuteInstallProcess()
-		},
-	}
-
 	// Flag orchestration
 	setupFlags(rootCmd)
-	setupFlags(buildCmd)
 
-	rootCmd.AddCommand(initCmd, buildCmd, runCmd, irunCmd, devCmd, cleanCmd, checkCmd, doctorCmd, tidyCmd, fmtCmd, vetCmd, testCmd, genCmd, installCmd)
+	registerCLICommands(rootCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
@@ -230,16 +149,23 @@ func setupFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&flagOut, "out", "o", DefaultDistDir, "Output directory")
 	cmd.Flags().StringVar(&flagVerPkg, "ver-pkg", "", "Variable path for version injection")
 	cmd.Flags().BoolVar(&flagAll, "all", false, "Build for all common platforms")
+
 	cmd.Flags().StringSliceVarP(&flagPlats, "platform", "p", []string{}, "Custom target platforms")
 	cmd.Flags().BoolVar(&flagStrip, "strip", true, "Strip debug symbols")
 	cmd.Flags().BoolVar(&flagExactName, "exact-name", false, "Omit OS/Arch suffixes from binary")
+	cmd.Flags().BoolVar(&flagNoAutoInstall, "no-auto-install", false, "Disable magical auto-install of missing packages")
 
 	cmd.Flags().StringVarP(&flagProfile, "profile", "P", "", "Use specific build profile from craft.yaml")
+
+	// Make verbose persistent so it applies to all subcommands
+	cmd.PersistentFlags().BoolVar(&flagVerbose, "verbose", false, "Enable verbose output and disable error parser")
 }
 
 // prepareEngine merges craft.yaml with CLI overrides.
 func prepareEngine() {
-	ConfigLoad()
+	if flagNoAutoInstall {
+		AppConfig.AutoInstall = false
+	}
 
 	if flagProfile != "" {
 		if prof, exists := AppConfig.Profiles[flagProfile]; exists {
@@ -251,7 +177,7 @@ func prepareEngine() {
 			}
 			if prof.BuildAll {
 				AppConfig.BuildAll = true
-				AppConfig.Platforms = nil // BuildAll varsa platform listesini sıfırla
+				AppConfig.Platforms = nil 
 			}
 			if len(prof.Platforms) > 0 {
 				AppConfig.Platforms = prof.Platforms
@@ -319,6 +245,16 @@ func executeBuildProcess(minimal bool) error {
 		UI.PrintBanner()
 	}
 
+	// Pre-Build hook
+	if err := RunScriptHook("pre_build", AppConfig.Scripts.PreBuild); err != nil {
+		return fmt.Errorf("pre_build script failed: %w", err)
+	}
+
+	// Minify step
+	if err := RunMinifyProcess(); err != nil {
+		pterm.Error.Printf("[craft] Minification failed: %v\n", err)
+	}
+
 	targets := Builder.ResolveTargets()
 	os.MkdirAll(AppConfig.OutputDir, 0755)
 
@@ -328,21 +264,65 @@ func executeBuildProcess(minimal bool) error {
 	}
 
 	var results []BuildResult
+	resultChan := make(chan BuildResult, len(targets))
+	var wg sync.WaitGroup
+
+	var multiSpin *pterm.SpinnerPrinter
+	isConcurrent := len(targets) > 1 && !minimal
+	if isConcurrent {
+		multiSpin, _ = pterm.DefaultSpinner.Start(fmt.Sprintf("Compiling for %d platforms concurrently...", len(targets)))
+	}
 
 	for _, t := range targets {
+		wg.Add(1)
 		outPath := Builder.GetBinaryPath(t, len(targets))
-		res := Builder.Compile(t, outPath, minimal)
+
+		go func(target BuildTarget, path string) {
+			defer wg.Done()
+			res := Builder.Compile(target, path, minimal, isConcurrent)
+			resultChan <- res
+		}(t, outPath)
+	}
+
+	wg.Wait()
+	close(resultChan)
+
+	if multiSpin != nil {
+		multiSpin.Success("Concurrent compilation finished")
+	}
+
+	for res := range resultChan {
 		results = append(results, res)
 	}
 
 	if !minimal {
 		UI.PrintSummary(results, time.Since(startTime))
 	}
+
+	// Post-Build hook
+	if err := RunScriptHook("post_build", AppConfig.Scripts.PostBuild); err != nil {
+		pterm.Error.Printf("[craft] post_build script failed: %v\n", err)
+	}
+
 	return nil
 }
 
-func executeRunProcess(args []string) error {
+func executeRunProcess(cmd *cobra.Command, args []string) error {
+	if flagScript && len(args) > 0 {
+		return ExecuteInlineScript(args)
+	}
+
 	prepareEngine()
+
+	// Intercept 'craft run <command>' if user didn't explicitly use '--' to bypass
+	if len(args) > 0 && cmd.ArgsLenAtDash() != 0 {
+		cmdName := args[0]
+		if cmdData, exists := AppConfig.Commands[cmdName]; exists {
+			pterm.Info.Printf("[craft] Intercepted 'run %s'. Executing custom task...\n", cmdName)
+			return executeCustomCommand(cmdName, cmdData, args[1:], 1)
+		}
+	}
+
 	UI.PrintBanner()
 	AppConfig.Platforms = []string{"current"}
 	AppConfig.BuildAll = false
@@ -352,10 +332,10 @@ func executeRunProcess(args []string) error {
 		return err
 	}
 
-	return executeIRunProcess(args)
+	return executeIRunProcess(cmd, args)
 }
 
-func executeIRunProcess(args []string) error {
+func executeIRunProcess(cmd *cobra.Command, args []string) error {
 	prepareEngine()
 
 	target := BuildTarget{OS: runtime.GOOS, Arch: runtime.GOARCH}
@@ -381,19 +361,27 @@ func executeIRunProcess(args []string) error {
 		return fmt.Errorf("invalid executable format")
 	}
 
-	pterm.DefaultSection.Printf("Spawning Process: %s", pterm.FgCyan.Sprint(absPath))
-	pterm.Println()
+	pterm.Printf("%s\n\n", pterm.NewStyle(pterm.FgCyan, pterm.Bold).Sprint("▶ Running Project..."))
+
+	// Pre-Run hook
+	if err := RunScriptHook("pre_run", AppConfig.Scripts.PreRun); err != nil {
+		return fmt.Errorf("pre_run script failed: %w", err)
+	}
 
 	if err := RunSysCommand(absPath, args); err != nil {
 		if strings.Contains(err.Error(), "not compatible") || strings.Contains(err.Error(), "exec format error") {
 			pterm.Println()
-			pterm.DefaultBox.WithTitle(pterm.FgRed.Sprint(" RUNTIME CONFLICT ")).
-				Println("Architecture mismatch or invalid PE/ELF header detected.\n" +
-					"Recommendation: Run 'craft run' to re-align with host system.")
+			pterm.Printf("%s %s\n", pterm.FgRed.Sprint("✖"), pterm.FgLightRed.Sprint("Architecture mismatch or invalid PE/ELF header detected."))
+			pterm.Printf("  %s %s\n", pterm.FgLightYellow.Sprint("Hint:"), pterm.FgWhite.Sprint("Run 'craft run' to re-align with host system."))
 		} else {
-			pterm.Error.Printf("Execution failed: %v\n", err)
+			pterm.Printf("%s %s\n", pterm.FgRed.Sprint("✖"), pterm.FgLightRed.Sprintf("Execution failed: %v", err))
 		}
 		return err
+	}
+
+	// Post-Run hook
+	if err := RunScriptHook("post_run", AppConfig.Scripts.PostRun); err != nil {
+		pterm.Error.Printf("[craft] post_run script failed: %v\n", err)
 	}
 
 	return nil

@@ -191,7 +191,7 @@ func main() {
 	outPath := Builder.GetBinaryPath(target, 1)
 
 	// 5. Execute the actual compiler
-	result := Builder.Compile(target, outPath, true) // minimal = true
+	result := Builder.Compile(target, outPath, true, true) // minimal = true, suppressSpinner = true
 
 	if !strings.Contains(result.Status, "SUCCESS") {
 		t.Fatalf("expected compilation to succeed, got status: %s, error: %s", result.Status, result.ErrorMsg)

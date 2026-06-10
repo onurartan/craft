@@ -6,7 +6,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -42,9 +41,9 @@ func (b *BuilderConfig) ResolveTargets() []BuildTarget {
 
 	if cfg.BuildAll {
 		return []BuildTarget{
-			{"linux", "amd64"}, {"linux", "arm64"},
-			{"windows", "amd64"},
-			{"darwin", "amd64"}, {"darwin", "arm64"},
+			{OS: string(OSLinux), Arch: string(ArchAmd64)}, {OS: string(OSLinux), Arch: string(ArchArm64)},
+			{OS: string(OSWindows), Arch: string(ArchAmd64)},
+			{OS: string(OSDarwin), Arch: string(ArchAmd64)}, {OS: string(OSDarwin), Arch: string(ArchArm64)},
 		}
 	}
 
@@ -77,7 +76,7 @@ func (b *BuilderConfig) GetBinaryPath(t BuildTarget, totalTargets int) string {
 		fileName = fmt.Sprintf("%s-%s-%s", cfg.Name, t.OS, t.Arch)
 	}
 
-	if t.OS == "windows" {
+	if t.OS == string(OSWindows) && filepath.Ext(fileName) == "" {
 		fileName += ".exe"
 	}
 
@@ -85,20 +84,20 @@ func (b *BuilderConfig) GetBinaryPath(t BuildTarget, totalTargets int) string {
 }
 
 // Compile executes the 'go build' command with injected flags and environment.
-func (b *BuilderConfig) Compile(t BuildTarget, outPath string, minimal bool) BuildResult {
+func (b *BuilderConfig) Compile(t BuildTarget, outPath string, minimal bool, suppressSpinner bool) BuildResult {
 	cfg := AppConfig
 	startTime := time.Now()
 	label := fmt.Sprintf("%s/%s", t.OS, t.Arch)
 
-
-	var spin *pterm.SpinnerPrinter 
-	if !minimal {
-		spin, _ = pterm.DefaultSpinner.Start(fmt.Sprintf("Compiling %s...", pterm.FgYellow.Sprint(label)))
+	var spin *pterm.SpinnerPrinter
+	if !minimal && !suppressSpinner {
+		spin, _ = pterm.DefaultSpinner.WithSequence("⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏").
+			WithRemoveWhenDone(true).
+			Start(pterm.FgDarkGray.Sprintf("Compiling ") + pterm.FgLightCyan.Sprint(label) + "...")
 	}
 
 	// Command-line arguments orchestration
 	cmdArgs := make([]string, 0, 10)
-	cmdArgs = append(cmdArgs, "build")
 
 	if cfg.Race {
 		cmdArgs = append(cmdArgs, "-race")
@@ -134,7 +133,20 @@ func (b *BuilderConfig) Compile(t BuildTarget, outPath string, minimal bool) Bui
 	os.MkdirAll(filepath.Dir(outPath), 0755)
 
 	// Triggering Go Toolchain
-	cmd := exec.Command("go", cmdArgs...)
+	cmd, tcErr := BuildGoCommand(GoCmdBuild, cmdArgs...)
+	if tcErr != nil {
+		if spin != nil {
+			spin.Fail("Toolchain validation failed")
+		}
+		return BuildResult{
+			Platform: label,
+			Status:   pterm.FgRed.Sprint("FAIL"),
+			Duration: time.Since(startTime),
+			Artifact: "-",
+			Size:     "-",
+			ErrorMsg: tcErr.Error(),
+		}
+	}
 
 	cgoVal := "0"
 	if cfg.CgoEnabled {
@@ -142,7 +154,12 @@ func (b *BuilderConfig) Compile(t BuildTarget, outPath string, minimal bool) Bui
 	}
 
 	// Isolate and inject target environment variables
-	cmd.Env = append(os.Environ(),
+	env := cmd.Env
+	if env == nil {
+		env = os.Environ()
+	}
+
+	cmd.Env = append(env,
 		"GOOS="+t.OS,
 		"GOARCH="+t.Arch,
 		"CGO_ENABLED="+cgoVal,

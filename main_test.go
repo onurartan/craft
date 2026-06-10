@@ -5,8 +5,15 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
+
+func init() {
+	pterm.DisableOutput()
+	pterm.DisableColor()
+	isTestEnv = true
+}
 
 // setupMockEnvironment creates an isolated temporary directory with a simulated .craft.yaml.
 // It returns a cleanup function to defer in tests.
@@ -135,6 +142,7 @@ profiles:
 			}
 
 			// Execute the core configuration merger
+			ConfigLoad()
 			prepareEngine()
 
 			if AppConfig.Name != tc.expectedName {

@@ -1,1880 +1,561 @@
 <!doctype html>
-<html lang="en" class="scroll-smooth">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CRAFT - Minimalist Go Build Utility</title>
+<html lang="en" class="scroll-smooth dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Craft - The Modern Go Build Utility & Package Manager</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script
-      defer
-      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
-    ></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
-      rel="stylesheet"
-    />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-makefile.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
+  <!-- Prism Syntax Highlighting -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-makefile.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
 
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ["Inter", "sans-serif"],
-              mono: ['"JetBrains Mono"', "monospace"],
-            },
-            colors: {
-              craft: {
-                cyan: "#22d3ee", // Tailwind cyan-400
-                magenta: "#e879f9", // Tailwind fuchsia-400
-                dark: "#0A0A0A",
-                panel: "#111111",
-              },
-            },
-            animation: {
-              glow: "glow 3s ease-in-out infinite alternate",
-            },
-            keyframes: {
-              glow: {
-                "0%": { boxShadow: "0 0 15px rgba(34, 211, 238, 0.1)" },
-                "100%": { boxShadow: "0 0 25px rgba(232, 121, 249, 0.2)" },
-              },
-            },
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ["Inter", "sans-serif"],
+            mono: ['"JetBrains Mono"', "monospace"],
           },
+          colors: {
+            background: '#000000',
+            surface: '#0A0A0A',
+            border: 'rgba(255, 255, 255, 0.08)',
+            craft: {
+              primary: '#EDEDED',
+              secondary: '#888888',
+            }
+          },
+          animation: {
+            'glow-pulse': 'glow-pulse 4s ease-in-out infinite alternate',
+          },
+          keyframes: {
+            'glow-pulse': {
+              '0%': { opacity: '0.3', transform: 'scale(0.95)' },
+              '100%': { opacity: '0.6', transform: 'scale(1.05)' },
+            }
+          }
         },
-      };
-    </script>
-    <style>
-      body {
-        background-color: #0a0a0a;
-        color: #fafafa;
-      }
-      .glass-panel {
-        background: rgba(255, 255, 255, 0.02);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(10px);
-      }
-      .gradient-text {
-        background: linear-gradient(to right, #22d3ee, #e879f9);
-        -webkit-background-clip: text;
-        color: transparent;
-      }
+      },
+    };
+  </script>
+  <style>
+    body {
+      background-color: #000;
+      color: #ededed;
+      -webkit-font-smoothing: antialiased;
+    }
+    ::selection { background: rgba(255,255,255,0.15); color: #fff; }
 
-      pre[class*="language-"] {
-        background: transparent !important;
-        margin: 0 !important;
-        padding: 1.5rem !important;
-        border: none !important;
-        text-shadow: none !important;
-      }
-      code[class*="language-"] {
-        text-shadow: none !important;
-        font-family: "JetBrains Mono", monospace !important;
-        font-size: 0.85rem !important;
-      }
+    .glass-panel {
+      background: #0A0A0A;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .glow-effect {
+      box-shadow: 0 0 60px -15px rgba(255, 255, 255, 0.15);
+    }
 
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #0a0a0a;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #333;
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #555;
-      }
-    </style>
-  </head>
-  <body
-    class="antialiased font-sans selection:bg-craft-cyan selection:text-black"
-  >
-    <nav
-      class="fixed top-0 w-full z-50 glass-panel border-b-0 border-white/10 transition-all duration-300 hover:bg-[#0A0A0A]/80"
-    >
-      <div
-        class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between"
-      >
-       <div
-          class="font-bold tracking-tighter text-xl flex items-center cursor-pointer hover:opacity-80 transition-opacity"
-          onclick="window.scrollTo(0, 0)"
-        >
-          CRAFT
+    /* Prism Overrides */
+    pre[class*="language-"] {
+      background: transparent !important;
+      margin: 0 !important;
+      padding: 1.25rem !important;
+      border: none !important;
+      text-shadow: none !important;
+    }
+    code[class*="language-"] {
+      text-shadow: none !important;
+      font-family: "JetBrains Mono", monospace !important;
+      font-size: 0.82rem !important;
+      color: #888;
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+  </style>
+</head>
+<body class="selection:bg-white/20 selection:text-white">
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 w-full z-50 bg-black/60 backdrop-blur-lg border-b border-white/5 transition-all duration-300">
+    <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+      <div class="font-bold tracking-tight text-lg text-white cursor-pointer hover:opacity-80 transition-opacity" onclick="window.scrollTo(0, 0)">
+        Craft
+      </div>
+      <div class="hidden md:flex space-x-8 text-[13px] font-medium text-[#888]">
+        <a href="#features" class="hover:text-white transition-colors duration-300">Features</a>
+        <a href="#explorer" class="hover:text-white transition-colors duration-300">Configuration</a>
+        <a href="docs.html" class="hover:text-white transition-colors duration-300">Documentation</a>
+      </div>
+      <div class="flex items-center gap-4">
+        <a href="docs.html" class="hidden md:inline-block text-[13px] font-medium text-white hover:text-gray-300 transition-colors">Read Docs</a>
+        <a href="https://github.com/onurartan/craft" target="_blank" class="group flex items-center gap-2 text-[13px] px-4 py-1.5 rounded-md bg-white text-black font-semibold hover:bg-gray-200 transition-all duration-300">
+          GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="relative pt-48 pb-32 px-6 text-center max-w-5xl mx-auto overflow-hidden">
+    <!-- Center Glow -->
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-white/5 blur-[100px] rounded-full pointer-events-none animate-glow-pulse"></div>
+
+    <div class="relative z-10">
+      <div class="inline-flex items-center gap-2 px-3 py-1 mb-8 rounded-full border border-white/10 bg-white/5 text-xs font-medium text-gray-300 tracking-wide hover:bg-white/10 transition-colors cursor-pointer" onclick="window.location.href='docs.html'">
+        <span class="flex h-2 w-2 rounded-full bg-emerald-500"></span>
+        Craft v0.1.0 is now available
+      </div>
+      
+      <h1 class="text-5xl md:text-7xl font-bold tracking-tighter mb-6 text-white leading-[1.1]">
+        The Modern Engine <br />
+        <span class="text-gray-400">for Go Developers.</span>
+      </h1>
+      
+      <p class="text-[17px] text-[#888] mb-12 max-w-2xl mx-auto leading-relaxed">
+        An extremely fast, all-in-one toolkit for Go development. Craft brings your toolchains, package management, and build pipelines together into one seamless workflow.
+      </p>
+
+      <!-- Install Command -->
+      <div x-data="{ copied: false }" 
+           class="group mx-auto inline-flex items-center justify-between glass-panel rounded-xl p-1.5 pl-6 pr-2 hover:border-white/20 transition-all duration-300 cursor-pointer w-full max-w-md"
+           @click="navigator.clipboard.writeText('go install github.com/onurartan/craft@latest').then(() => { copied = true; setTimeout(() => copied = false, 2000) })">
+        <div class="font-mono text-[13px] text-gray-400 flex items-center gap-3">
+          <span class="text-gray-600">$</span>
+          <span><span class="text-white">go install</span> github.com/onurartan/craft@latest</span>
         </div>
-        <div class="hidden md:flex space-x-6 text-sm font-medium text-gray-400">
-          <a
-            href="#philosophy"
-            class="hover:text-craft-cyan transition-colors duration-300"
-            >Philosophy</a
-          >
-          <a
-            href="#installation"
-            class="hover:text-craft-cyan transition-colors duration-300"
-            >Installation</a
-          >
-          <a
-            href="#configuration"
-            class="hover:text-craft-cyan transition-colors duration-300"
-            >Configuration</a
-          >
-          <a
-            href="#cli-reference"
-            class="hover:text-craft-cyan transition-colors duration-300"
-            >CLI</a
-          >
-          <a
-            href="#advanced"
-            class="hover:text-craft-cyan transition-colors duration-300"
-            >Advanced</a
-          >
+        <button class="bg-white/10 group-hover:bg-white group-hover:text-black text-white px-4 py-2 rounded-lg transition-all duration-300 font-medium text-[13px] w-[80px] flex justify-center items-center">
+          <span x-show="!copied">Copy</span>
+          <span x-show="copied" x-cloak>Copied</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Quick Start Section -->
+  <section class="max-w-4xl mx-auto px-6 pb-32">
+    <div class="glass-panel rounded-2xl p-8 relative overflow-hidden glow-effect flex flex-col md:flex-row items-center justify-between gap-8 bg-[#050505]">
+      <div class="md:w-1/3">
+        <h2 class="text-2xl font-bold text-white mb-3 tracking-tight">Quick Start</h2>
+        <p class="text-[14px] text-[#888] leading-relaxed">
+          From zero to a fully orchestrated Go environment in under 15 seconds. Pure Go, pure speed.
+        </p>
+      </div>
+      <div class="md:w-2/3 bg-[#0A0A0A] border border-white/5 rounded-xl p-6 font-mono text-[13px] text-gray-400 space-y-5 w-full">
+        <div>
+          <span class="text-gray-600"># 1. Install Craft</span><br/>
+          <span class="text-blue-400">$</span> <span class="text-white">go install</span> github.com/onurartan/craft@latest
         </div>
         <div>
-          <a
-            href="https://github.com/onurartan/craft"
-            target="_blank"
-            class="group flex items-center gap-2 text-sm px-5 py-2 rounded-lg bg-white/10 text-white font-medium hover:bg-white hover:text-black transition-all duration-300"
-          >
-            <svg
-              class="w-4 h-4 fill-current group-hover:scale-110 transition-transform"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"
-              />
-            </svg>
-            GitHub
-          </a>
+          <span class="text-gray-600"># 2. Scaffold a new project (or run `craft init`)</span><br/>
+          <span class="text-blue-400">$</span> <span class="text-white">craft create</span> my-api
+        </div>
+        <div>
+          <span class="text-gray-600"># 3. Start the Hot-Reload engine</span><br/>
+          <span class="text-blue-400">$</span> <span class="text-white">craft dev</span>
         </div>
       </div>
-    </nav>
+    </div>
+  </section>
 
-    <header class="pt-48 pb-32 px-6 text-center max-w-5xl mx-auto relative">
-      <div
-        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-craft-cyan/5 blur-[120px] rounded-full pointer-events-none"
-      ></div>
+  <!-- Bento Box Feature Grid -->
+  <main class="max-w-6xl mx-auto px-6 pb-40">
+    
+    <div class="flex items-center justify-center gap-4 mb-16" id="features">
+      <div class="h-[1px] w-12 bg-white/20"></div>
+      <h2 class="text-xl font-medium tracking-tight text-white uppercase">The Ecosystem</h2>
+      <div class="h-[1px] w-12 bg-white/20"></div>
+    </div>
 
-      <div class="relative z-10">
-        <!-- <div
-          class="inline-block mb-4 px-3 py-1 rounded-full border border-craft-cyan/30 bg-craft-cyan/10 text-craft-cyan text-xs font-semibold tracking-wide"
-        >
-          v0.1.0 is now live
-        </div> -->
-        <h1
-          class="text-6xl md:text-8xl font-bold tracking-tighter mb-8 leading-[1.1]"
-        >
-          The Minimalist <br />
-          <span class="gradient-text">Go Build Utility</span>
-        </h1>
-        <p
-          class="text-lg md:text-xl text-gray-400 mb-12 max-w-2xl mx-auto leading-relaxed"
-        >
-          A focused wrapper around the Go toolchain. Automate cross-compilation,
-          dynamic version injection, and hot-reload development without the
-          bloat of task runners.
-        </p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      
+      <!-- TOP ROW -->
 
-      <div
-          x-data="{ copied: false }"
-          class="group inline-flex items-center glass-panel rounded-xl p-1.5 pl-6 pr-2 hover:border-craft-cyan/50 hover:shadow-[0_0_20px_rgba(34,211,238,0.15)] transition-all duration-300 cursor-pointer"
-          @click="copyToClipboard('go install github.com/onurartan/craft@latest').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
-        >
-          <span
-            class="font-mono text-sm text-gray-300 mr-6 group-hover:text-white transition-colors"
-          >
-            <span class="text-craft-magenta">go install</span>
-            github.com/onurartan/craft@latest
-          </span>
-          <button
-            class="bg-white/10 group-hover:bg-craft-cyan group-hover:text-black text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center font-medium text-sm w-[88px] justify-center"
-          >
-            <span x-show="!copied">Copy</span>
-            <span x-show="copied" x-cloak>Copied!</span>
-          </button>
-        </div>
-      </div>
-    </header>
-
-    <main class="max-w-6xl mx-auto px-6 pb-32 space-y-40">
-      <section id="philosophy" class="scroll-mt-32">
-        <div class="flex items-end gap-4 mb-10">
-          <h2 class="text-3xl font-semibold tracking-tight">Why Craft?</h2>
-          <div
-            class="h-[1px] flex-1 bg-gradient-to-r from-white/20 to-transparent mb-2"
-          ></div>
-        </div>
-
-        <div class="grid lg:grid-cols-2 gap-8">
-          <div
-            class="glass-panel rounded-2xl overflow-hidden group hover:border-red-500/30 transition-colors duration-500"
-          >
-            <div class="p-8 border-b border-white/5">
-              <div class="flex items-center justify-between mb-2">
-                <h3 class="text-xl font-medium text-white">
-                  The Old Way
-                  <span class="text-gray-500 text-sm font-normal"
-                    >(Makefile)</span
-                  >
-                </h3>
-                <span
-                  class="px-2 py-1 rounded bg-red-500/10 text-red-400 text-xs font-mono"
-                  >Bloated</span
-                >
-              </div>
-              <p class="text-sm text-gray-400">
-                Hard to maintain, fails on Windows, requires bash syntax, and
-                clutters your project root.
-              </p>
-            </div>
-            <div class="bg-craft-panel relative">
-              <div
-                class="absolute top-0 left-0 w-full h-8 bg-black/40 flex items-center px-4 gap-2"
-              >
-                <div class="w-2.5 h-2.5 rounded-full bg-[#FF5F56]"></div>
-                <div class="w-2.5 h-2.5 rounded-full bg-[#FFBD2E]"></div>
-                <div class="w-2.5 h-2.5 rounded-full bg-[#27C93F]"></div>
-                <span class="text-[10px] text-gray-500 ml-2 font-mono"
-                  >Makefile</span
-                >
-              </div>
-              <div class="pt-8">
-                <pre><code class="language-makefile">VERSION := 1.0.0
-LDFLAGS := -s -w -X main.Version=$(VERSION)
-
-build-all:
-	GOOS=linux GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -trimpath -o bin/app-linux .
-	GOOS=windows GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -trimpath -o bin/app.exe .
-	GOOS=darwin GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -trimpath -o bin/app-mac .</code></pre>
-              </div>
-            </div>
+        <!-- Feature 2: Smart Package Management (Big) -->
+      <div class="md:col-span-2 glass-panel rounded-2xl p-8 relative overflow-hidden group hover:border-white/20 transition-colors duration-500 flex flex-col justify-between">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-3xl rounded-full"></div>
+        <div class="relative z-10">
+          <div class="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center mb-6">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
           </div>
-
-          <div
-            class="glass-panel rounded-2xl overflow-hidden group hover:border-craft-cyan/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.1)] transition-all duration-500"
-          >
-            <div class="p-8 border-b border-white/5 relative overflow-hidden">
-              <div
-                class="absolute top-0 right-0 w-40 h-40 bg-craft-cyan/10 blur-3xl rounded-full"
-              ></div>
-              <div class="flex items-center justify-between mb-2 relative z-10">
-                <h3 class="text-xl font-medium text-white">The Craft Way</h3>
-                <span
-                  class="px-2 py-1 rounded bg-craft-cyan/10 text-craft-cyan text-xs font-mono"
-                  >Streamlined</span
-                >
-              </div>
-              <p class="text-sm text-gray-400 relative z-10">
-                Declarative YAML, native Go execution, cross-platform by
-                default. No bash required.
-              </p>
-            </div>
-            <div class="bg-craft-panel relative">
-              <div
-                class="absolute top-0 left-0 w-full h-8 bg-black/40 flex items-center px-4 gap-2 border-b border-white/5"
-              >
-                <div class="w-2.5 h-2.5 rounded-full bg-[#FF5F56]"></div>
-                <div class="w-2.5 h-2.5 rounded-full bg-[#FFBD2E]"></div>
-                <div class="w-2.5 h-2.5 rounded-full bg-[#27C93F]"></div>
-                <span class="text-[10px] text-gray-500 ml-2 font-mono"
-                  >terminal</span
-                >
-              </div>
-              <div class="pt-8">
-                <pre><code class="language-bash">$ craft build --all
-
-│ Project    app
-│ Version    1.0.0
-│ Targets    3 Platform(s)
-
-PLATFORM        STATUS    SIZE       TIME      ARTIFACT
-linux/amd64     Done      4.20 MB    1.2s      bin/app-linux-amd64
-windows/amd64   Done      4.35 MB    1.5s      bin/app-windows-amd64.exe
-darwin/arm64    Done      4.15 MB    1.1s      bin/app-darwin-arm64</code></pre>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="installation" class="scroll-mt-32">
-        <div class="flex items-end gap-4 mb-10">
-          <h2 class="text-3xl font-semibold tracking-tight">Installation</h2>
-          <div
-            class="h-[1px] flex-1 bg-gradient-to-r from-white/20 to-transparent mb-2"
-          ></div>
-        </div>
-
-        <div class="grid md:grid-cols-2 gap-8">
-          <div class="glass-panel p-8 rounded-2xl relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1 bg-craft-cyan"></div>
-            <h3 class="text-xl font-bold text-white mb-2">
-              1. Go Toolchain (Recommended)
-            </h3>
-            <p class="text-sm text-gray-400 mb-6">
-              If you are a Go developer, use the native toolchain. It complies
-              Craft specifically for your host machine in seconds.
-            </p>
-            <div class="bg-black/50 border border-white/10 rounded-lg p-4 mb-4">
-              <code class="font-mono text-sm text-craft-cyan"
-                >$ go install github.com/onurartan/craft@latest</code
-              >
-            </div>
-            <p class="text-xs text-gray-500">
-              Ensure your
-              <code class="bg-white/10 px-1 rounded">~/go/bin</code> is added to
-              your system's PATH variable.
-            </p>
-          </div>
-
-          <div class="glass-panel p-8 rounded-2xl relative overflow-hidden">
-            <div
-              class="absolute top-0 left-0 w-full h-1 bg-craft-magenta"
-            ></div>
-            <h3 class="text-xl font-bold text-white mb-2">
-              2. Pre-Compiled Binaries
-            </h3>
-            <p class="text-sm text-gray-400 mb-6">
-              Want to use Craft in CI/CD without installing Go? Download the
-              standalone executable directly from GitHub Releases. Zero
-              dependencies.
-            </p>
-            <a
-              href="https://github.com/onurartan/craft/releases"
-              target="_blank"
-              class="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-5 py-3 rounded-lg font-medium text-sm transition-colors border border-white/10"
-            >
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                ></path>
-              </svg>
-              Download for Windows / Mac / Linux
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <section
-        id="configuration"
-        class="scroll-mt-32"
-        x-data="{ activeConf: 'version' }"
-      >
-        <div class="flex items-end gap-4 mb-10">
-          <h2 class="text-3xl font-semibold tracking-tight">
-            Configuration Anatomy
-          </h2>
-          <div
-            class="h-[1px] flex-1 bg-gradient-to-r from-white/20 to-transparent mb-2"
-          ></div>
-        </div>
-
-        <p class="text-gray-400 mb-8 max-w-3xl leading-relaxed">
-          Click any block in the configuration file below to explore its
-          advanced capabilities. Craft's declarative design hides a massive
-          amount of complexity under the hood.
-        </p>
-
-        <div
-          class="glass-panel rounded-2xl overflow-hidden shadow-2xl border border-white/10 flex flex-col lg:flex-row min-h-[650px] bg-[#0d0d0d]"
-        >
-          <div
-            class="lg:w-5/12 border-r border-white/5 flex flex-col bg-[#111111]"
-          >
-            <div
-              class="h-12 bg-black/40 border-b border-white/5 flex items-center px-4 justify-between"
-            >
-              <div class="flex items-center gap-2">
-                <div class="w-3 h-3 rounded-full bg-[#FF5F56]"></div>
-                <div class="w-3 h-3 rounded-full bg-[#FFBD2E]"></div>
-                <div class="w-3 h-3 rounded-full bg-[#27C93F]"></div>
-              </div>
-              <div
-                class="flex items-center gap-2 text-xs font-mono text-gray-500"
-              >
-                <svg
-                  class="w-4 h-4 text-craft-cyan"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  ></path>
-                </svg>
-                .craft.yaml
-              </div>
-            </div>
-
-            <div
-              class="flex-1 p-4 font-mono text-[13px] leading-[1.7] overflow-y-auto selection:bg-white/20"
-            >
-              <div class="text-[#75715e] mb-1"># --- METADATA & PATHS ---</div>
-              <div
-                @click="activeConf = 'metadata'"
-                class="cursor-pointer rounded -mx-2 px-2 py-1 transition-all duration-200 group"
-                :class="activeConf === 'metadata' ? 'bg-white/10 ring-1 ring-white/10' : 'hover:bg-white/5'"
-              >
-                <span class="text-[#22d3ee]">name:</span>
-                <span class="text-[#a6e22e]">"craft"</span><br />
-                <span class="text-[#22d3ee]">entry_point:</span>
-                <span class="text-[#a6e22e]">"."</span><br />
-                <span class="text-[#22d3ee]">output_dir:</span>
-                <span class="text-[#a6e22e]">"bin"</span><br />
-                <span class="text-[#22d3ee]">exact_name:</span>
-                <span class="text-[#e6db74]">true</span>
-                <div
-                  class="hidden group-hover:block absolute right-4 text-[10px] text-gray-500 uppercase tracking-widest mt-[-20px] pointer-events-none"
-                >
-                  Inspect
-                </div>
-              </div>
-
-              <div class="text-[#75715e] mt-4 mb-1">
-                # --- VERSIONING & LDFLAGS ---
-              </div>
-              <div
-                @click="activeConf = 'version'"
-                class="cursor-pointer rounded -mx-2 px-2 py-1 transition-all duration-200 relative group"
-                :class="activeConf === 'version' ? 'bg-craft-cyan/10 ring-1 ring-craft-cyan/30' : 'hover:bg-white/5'"
-              >
-                <span class="text-[#22d3ee]">version:</span>
-                <span class="text-[#a6e22e]">"in_go:main.AppVersion"</span
-                ><br />
-                <span class="text-[#22d3ee]">version_pkg:</span>
-                <span class="text-[#a6e22e]">"main.Version"</span>
-                <div
-                  class="hidden group-hover:block absolute right-4 text-[10px] text-craft-cyan uppercase tracking-widest mt-[-20px] pointer-events-none"
-                >
-                  Advanced
-                </div>
-              </div>
-
-              <div class="text-[#75715e] mt-4 mb-1">
-                # --- PLATFORM TARGETS ---
-              </div>
-              <div
-                @click="activeConf = 'platforms'"
-                class="cursor-pointer rounded -mx-2 px-2 py-1 transition-all duration-200 group relative"
-                :class="activeConf === 'platforms' ? 'bg-white/10 ring-1 ring-white/10' : 'hover:bg-white/5'"
-              >
-                <span class="text-[#22d3ee]">build_all:</span>
-                <span class="text-[#e6db74]">false</span><br />
-                <span class="text-[#22d3ee]">platforms:</span><br />
-                &nbsp;&nbsp;<span class="text-[#f8f8f2]">-</span>
-                <span class="text-[#a6e22e]">"current"</span>
-              </div>
-
-              <div class="text-[#75715e] mt-4 mb-1">
-                # --- BUILD PROFILES ---
-              </div>
-              <div
-                @click="activeConf = 'profiles'"
-                class="cursor-pointer rounded -mx-2 px-2 py-1 transition-all duration-200 group relative"
-                :class="activeConf === 'profiles' ? 'bg-craft-magenta/10 ring-1 ring-craft-magenta/30' : 'hover:bg-white/5'"
-              >
-                <span class="text-[#22d3ee]">profiles:</span><br />
-                &nbsp;&nbsp;<span class="text-[#22d3ee]">npm:</span><br />
-                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-[#22d3ee]"
-                  >output_dir:</span
-                >
-                <span class="text-[#a6e22e]">"npm/bin"</span><br />
-                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-[#22d3ee]"
-                  >build_all:</span
-                >
-                <span class="text-[#e6db74]">true</span><br />
-                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-[#22d3ee]"
-                  >exact_name:</span
-                >
-                <span class="text-[#e6db74]">false</span><br />
-                &nbsp;&nbsp;<span class="text-[#22d3ee]">release:</span><br />
-                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-[#22d3ee]"
-                  >output_dir:</span
-                >
-                <span class="text-[#a6e22e]">"releases/v1"</span><br />
-                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-[#22d3ee]"
-                  >platforms:</span
-                >
-                <span class="text-[#f8f8f2]">[</span
-                ><span class="text-[#a6e22e]">"linux/amd64"</span
-                ><span class="text-[#f8f8f2]">,</span>
-                <span class="text-[#a6e22e]">"windows/amd64"</span
-                ><span class="text-[#f8f8f2]">]</span>
-              </div>
-
-              <div class="text-[#75715e] mt-4 mb-1"># --- OPTIMIZATION ---</div>
-              <div
-                @click="activeConf = 'optimization'"
-                class="cursor-pointer rounded -mx-2 px-2 py-1 transition-all duration-200 group relative"
-                :class="activeConf === 'optimization' ? 'bg-white/10 ring-1 ring-white/10' : 'hover:bg-white/5'"
-              >
-                <span class="text-[#22d3ee]">strip_debug:</span>
-                <span class="text-[#e6db74]">true</span><br />
-                <span class="text-[#22d3ee]">trimpath:</span>
-                <span class="text-[#e6db74]">true</span><br />
-                <span class="text-[#22d3ee]">cgo_enabled:</span>
-                <span class="text-[#e6db74]">false</span><br />
-                <span class="text-[#22d3ee]">race:</span>
-                <span class="text-[#e6db74]">false</span><br />
-                <span class="text-[#22d3ee]">tags:</span>
-                <span class="text-[#f8f8f2]">[]</span>
-              </div>
-
-              <div class="text-[#75715e] mt-4 mb-1">
-                # --- HOT-RELOAD ENGINE ---
-              </div>
-              <div
-                @click="activeConf = 'dev'"
-                class="cursor-pointer rounded -mx-2 px-2 py-1 transition-all duration-200 group relative"
-                :class="activeConf === 'dev' ? 'bg-white/10 ring-1 ring-white/10' : 'hover:bg-white/5'"
-              >
-                <span class="text-[#22d3ee]">dev:</span><br />
-                &nbsp;&nbsp;<span class="text-[#22d3ee]">watch:</span><br />
-                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-[#22d3ee]"
-                  >enabled:</span
-                >
-                <span class="text-[#e6db74]">false</span><br />
-                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-[#22d3ee]"
-                  >delay_ms:</span
-                >
-                <span class="text-orange-400">500</span><br />
-                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-[#22d3ee]"
-                  >include_exts:</span
-                >
-                <span class="text-[#f8f8f2]">[</span
-                ><span class="text-[#a6e22e]">"go"</span
-                ><span class="text-[#f8f8f2]">,</span>
-                <span class="text-[#a6e22e]">"env"</span
-                ><span class="text-[#f8f8f2]">]</span><br />
-                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-[#22d3ee]"
-                  >exclude_dirs:</span
-                >
-                <span class="text-[#f8f8f2]">[</span
-                ><span class="text-[#a6e22e]">"bin"</span
-                ><span class="text-[#f8f8f2]">,</span>
-                <span class="text-[#a6e22e]">"vendor"</span
-                ><span class="text-[#f8f8f2]">]</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="lg:w-7/12 bg-[#0d0d0d] relative overflow-y-auto">
-            <div
-              class="h-12 bg-black/20 border-b border-white/5 flex items-center px-6"
-            >
-              <span
-                class="text-xs font-bold text-gray-400 uppercase tracking-widest"
-                >Inspector</span
-              >
-            </div>
-
-            <div class="p-8">
-              <div
-                x-show="activeConf === 'version'"
-                x-cloak
-                x-transition.opacity
-              >
-                <div class="flex items-center gap-3 mb-4">
-                  <h3 class="text-2xl font-bold text-white">
-                    Dynamic Versioning Engine
-                  </h3>
-                  <span
-                    class="px-2 py-0.5 rounded bg-craft-cyan/20 text-craft-cyan text-[10px] font-bold uppercase tracking-wide"
-                    >Superpower</span
-                  >
-                </div>
-                <p class="text-gray-400 text-sm leading-relaxed mb-6">
-                  Craft features a native AST (Abstract Syntax Tree) and file
-                  parser. Instead of hardcoding versions in YAML, Craft can
-                  dynamically extract them directly from your source code or
-                  configuration files.
-                </p>
-
-                <div class="space-y-6">
-                  <div>
-                    <h4
-                      class="text-white text-sm font-semibold mb-2 flex items-center gap-2"
-                    >
-                      <svg
-                        class="w-4 h-4 text-gray-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-                        ></path>
-                      </svg>
-                      1. The 'in_go' Parser (AST Extraction)
-                    </h4>
-                    <p class="text-xs text-gray-400 mb-2">
-                      Reads the target Go file using the native compiler AST,
-                      safely extracting the value without dirty regex.
-                    </p>
-                    <div
-                      class="bg-[#111] p-3 rounded-lg border border-white/5 font-mono text-xs"
-                    >
-                      <span class="text-gray-500"
-                        ># Extracts value of AppVersion from main.go</span
-                      ><br />
-                      <span class="text-craft-cyan">version:</span>
-                      <span class="text-green-400"
-                        >"in_go:main.AppVersion"</span
-                      >
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4
-                      class="text-white text-sm font-semibold mb-2 flex items-center gap-2"
-                    >
-                      <svg
-                        class="w-4 h-4 text-gray-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        ></path>
-                      </svg>
-                      2. The 'file' Parser (Struct Extraction)
-                    </h4>
-                    <p class="text-xs text-gray-400 mb-2">
-                      Parses raw text, JSON, or YAML files to extract specific
-                      keys. Perfect for monorepos sharing a
-                      <code class="text-white">package.json</code>.
-                    </p>
-                    <div
-                      class="bg-[#111] p-3 rounded-lg border border-white/5 font-mono text-xs space-y-2"
-                    >
-                      <div>
-                        <span class="text-gray-500"
-                          ># Reads raw content of .version file</span
-                        ><br />
-                        <span class="text-craft-cyan">version:</span>
-                        <span class="text-green-400">"file:.version"</span>
-                      </div>
-
-                      <div>
-                        <span class="text-gray-500"
-                          ># Parses package.json -> version key</span
-                        ><br />
-                        <span class="text-craft-cyan">version:</span>
-                        <span class="text-green-400"
-                          >"file:package.json|version"</span
-                        >
-                      </div>
-
-                      <div>
-                        <span class="text-gray-500"
-                          ># Nested YAML keys (e.g. app.metadata.version)</span
-                        ><br />
-                        <span class="text-craft-cyan">version:</span>
-                        <span class="text-green-400"
-                          >"file:config.yaml|app.metadata.version"</span
-                        >
-                      </div>
-                    </div>
-                  </div>
-
-                  <div
-                    class="p-4 rounded-xl bg-craft-cyan/5 border border-craft-cyan/20"
-                  >
-                    <h4 class="text-sm font-bold text-craft-cyan mb-1">
-                      LDFLAGS Injection (version_pkg)
-                    </h4>
-                    <p class="text-xs text-gray-300 leading-relaxed">
-                      Once the version is extracted via the methods above,
-                      defining
-                      <code class="text-white"
-                        >version_pkg: "main.Version"</code
-                      >
-                      automatically injects that value into your binary at
-                      compile time via
-                      <code class="text-white"
-                        >-ldflags "-X main.Version=..."</code
-                      >.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                x-show="activeConf === 'profiles'"
-                x-cloak
-                x-transition.opacity
-              >
-                <div class="flex items-center gap-3 mb-4">
-                  <h3 class="text-2xl font-bold text-white">Build Profiles</h3>
-                  <span
-                    class="px-2 py-0.5 rounded bg-craft-magenta/20 text-craft-magenta text-[10px] font-bold uppercase tracking-wide"
-                    >Workflows</span
-                  >
-                </div>
-                <p class="text-gray-400 text-sm leading-relaxed mb-6">
-                  Profiles eliminate the need for complex Makefiles. Define
-                  specific environments (like
-                  <code class="text-white">npm</code> or
-                  <code class="text-white">release</code>) and override the
-                  global configuration.
-                </p>
-
-                <div class="space-y-4">
-                  <div class="p-4 rounded-xl border border-white/5 bg-white/5">
-                    <h4 class="text-white text-sm font-semibold mb-1">
-                      How it works
-                    </h4>
-                    <p class="text-xs text-gray-400 mb-3">
-                      If you run
-                      <code class="text-white">craft build -P npm</code>, the
-                      engine merges the
-                      <code class="text-craft-magenta">npm</code> profile over
-                      the base settings. In the example on the left, it changes
-                      the output directory to
-                      <code class="text-white">npm/bin</code>, forces
-                      <code class="text-white">build_all: true</code>, and turns
-                      off <code class="text-white">exact_name</code>.
-                    </p>
-                    <code
-                      class="block font-mono text-xs text-craft-magenta bg-black/50 p-3 rounded border border-white/5"
-                      >$ craft build --profile release</code
-                    >
-                  </div>
-
-                  <ul
-                    class="text-sm text-gray-400 space-y-2 mt-4 list-disc pl-4 marker:text-craft-magenta"
-                  >
-                    <li>Overrides `output_dir`</li>
-                    <li>Overrides `name`</li>
-                    <li>Overrides `platforms` array</li>
-                    <li>Overrides `build_all` boolean</li>
-                    <li>Overrides `exact_name` boolean</li>
-                  </ul>
-                </div>
-              </div>
-
-              <div
-                x-show="activeConf === 'metadata'"
-                x-cloak
-                x-transition.opacity
-              >
-                <h3 class="text-2xl font-bold text-white mb-4">
-                  Core Metadata
-                </h3>
-                <p class="text-gray-400 text-sm leading-relaxed mb-6">
-                  The foundational structure and routing for your Go
-                  compilation.
-                </p>
-
-                <div class="space-y-4">
-                  <div class="border-l-2 border-craft-cyan pl-4 py-1">
-                    <code class="text-white text-sm font-mono font-bold"
-                      >output_dir</code
-                    >
-                    <p class="text-xs text-gray-400 mt-1">
-                      The root destination. Craft will dynamically recursively
-                      create deep directories if needed (e.g.,
-                      <code class="text-gray-300">bin/server/linux/</code>).
-                    </p>
-                  </div>
-                  <div class="border-l-2 border-craft-cyan pl-4 py-1">
-                    <code class="text-white text-sm font-mono font-bold"
-                      >exact_name</code
-                    >
-                    <p class="text-xs text-gray-400 mt-1">
-                      By default, building for multiple platforms appends
-                      suffixes (e.g.,
-                      <code class="text-white">craft-linux-amd64</code>).
-                      Setting this to
-                      <code class="text-yellow-400">true</code> forces the
-                      output to be exactly the
-                      <code class="text-white">name</code> string. Useful for
-                      Docker container entrypoints.
-                    </p>
-                  </div>
-                  <div class="border-l-2 border-craft-cyan pl-4 py-1">
-                    <code class="text-white text-sm font-mono font-bold"
-                      >entry_point</code
-                    >
-                    <p class="text-xs text-gray-400 mt-1">
-                      Points to the directory containing your
-                      <code class="text-white">func main()</code>. Defaults to
-                      <code class="text-green-400">"."</code>.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                x-show="activeConf === 'platforms'"
-                x-cloak
-                x-transition.opacity
-              >
-                <h3 class="text-2xl font-bold text-white mb-4">
-                  Target Matrix
-                </h3>
-                <p class="text-gray-400 text-sm leading-relaxed mb-6">
-                  Cross-compilation orchestration.
-                </p>
-
-                <div class="space-y-4">
-                  <div class="border-l-2 border-white pl-4 py-1">
-                    <code class="text-white text-sm font-mono font-bold"
-                      >build_all</code
-                    >
-                    <p class="text-xs text-gray-400 mt-1">
-                      If <code class="text-yellow-400">true</code>, overrides
-                      the platforms list and compiles concurrently for Linux
-                      (amd64/arm64), Windows (amd64), and macOS (amd64/arm64).
-                    </p>
-                  </div>
-                  <div class="border-l-2 border-white pl-4 py-1">
-                    <code class="text-white text-sm font-mono font-bold"
-                      >platforms</code
-                    >
-                    <p class="text-xs text-gray-400 mt-1">
-                      An array of
-                      <code class="text-white">GOOS/GOARCH</code> strings. The
-                      special keyword
-                      <code class="text-green-400">"current"</code> reads your
-                      machine's local OS and Architecture for rapid local
-                      testing.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                x-show="activeConf === 'optimization'"
-                x-cloak
-                x-transition.opacity
-              >
-                <h3 class="text-2xl font-bold text-white mb-4">
-                  Compiler Directives
-                </h3>
-                <p class="text-gray-400 text-sm leading-relaxed mb-6">
-                  Control how the Go toolchain builds and optimizes your
-                  artifact.
-                </p>
-
-                <div class="grid grid-cols-1 gap-4">
-                  <div class="bg-white/5 p-4 rounded-lg">
-                    <code
-                      class="text-yellow-400 text-sm font-mono font-bold block mb-1"
-                      >strip_debug</code
-                    >
-                    <p class="text-xs text-gray-400">
-                      Passes <code class="text-gray-300">-s -w</code> to the
-                      linker. Strips DWARF symbol tables, drastically reducing
-                      binary size.
-                    </p>
-                  </div>
-                  <div class="bg-white/5 p-4 rounded-lg">
-                    <code
-                      class="text-yellow-400 text-sm font-mono font-bold block mb-1"
-                      >trimpath</code
-                    >
-                    <p class="text-xs text-gray-400">
-                      Removes local filesystem absolute paths from compiled
-                      stack traces. Crucial for privacy and reproducible builds.
-                    </p>
-                  </div>
-                  <div class="bg-white/5 p-4 rounded-lg">
-                    <code
-                      class="text-yellow-400 text-sm font-mono font-bold block mb-1"
-                      >cgo_enabled</code
-                    >
-                    <p class="text-xs text-gray-400">
-                      Turns on CGO. <strong>Warning:</strong> Cross-compilation
-                      with CGO requires external C compilers (like Zig or GCC
-                      cross-compilers).
-                    </p>
-                  </div>
-                  <div class="bg-white/5 p-4 rounded-lg">
-                    <code
-                      class="text-yellow-400 text-sm font-mono font-bold block mb-1"
-                      >tags</code
-                    >
-                    <p class="text-xs text-gray-400">
-                      Array of Go build tags. Example:
-                      <code class="text-green-400">["pro", "enterprise"]</code>
-                      injects
-                      <code class="text-white">-tags pro,enterprise</code> into
-                      the build command.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div x-show="activeConf === 'dev'" x-cloak x-transition.opacity>
-                <div class="flex items-center gap-3 mb-4">
-                  <h3 class="text-2xl font-bold text-white">
-                    Hot-Reload Engine
-                  </h3>
-                  <span
-                    class="px-2 py-0.5 rounded bg-green-500/20 text-green-400 text-[10px] font-bold uppercase tracking-wide"
-                    >dev mode</span
-                  >
-                </div>
-                <p class="text-gray-400 text-sm leading-relaxed mb-6">
-                  Settings for <code class="text-white">craft dev</code>. Craft
-                  watches your project intelligently, consuming zero unnecessary
-                  memory.
-                </p>
-
-                <div class="space-y-4">
-                  <div class="border-l-2 border-green-500 pl-4 py-1">
-                    <code class="text-white text-sm font-mono font-bold"
-                      >delay_ms</code
-                    >
-                    <p class="text-xs text-gray-400 mt-1">
-                      Debounce timer. If you rapidly save a file 5 times, Craft
-                      waits <code class="text-orange-400">500ms</code> before
-                      triggering the build to prevent system lockups.
-                    </p>
-                  </div>
-                  <div class="border-l-2 border-green-500 pl-4 py-1">
-                    <code class="text-white text-sm font-mono font-bold"
-                      >include_exts</code
-                    >
-                    <p class="text-xs text-gray-400 mt-1">
-                      Craft only monitors these extensions. Ensures it ignores
-                      massive assets like images or SQLite databases.
-                    </p>
-                  </div>
-                  <div class="border-l-2 border-green-500 pl-4 py-1">
-                    <code class="text-white text-sm font-mono font-bold"
-                      >exclude_dirs</code
-                    >
-                    <p class="text-xs text-gray-400 mt-1">
-                      Crucial for performance. Craft completely ignores heavy
-                      folders like
-                      <code class="text-gray-300">node_modules</code>,
-                      <code class="text-gray-300">vendor</code>, and
-                      <code class="text-gray-300">.git</code>.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section
-        id="cli-reference"
-        class="scroll-mt-32"
-        x-data="{ activeCmd: 'build' }"
-      >
-        <div class="flex items-end gap-4 mb-10">
-          <h2 class="text-3xl font-semibold tracking-tight">CLI Reference</h2>
-          <div
-            class="h-[1px] flex-1 bg-gradient-to-r from-white/20 to-transparent mb-2"
-          ></div>
-        </div>
-
-        <div
-          class="glass-panel rounded-2xl flex flex-col md:flex-row overflow-hidden border border-white/10 shadow-2xl shadow-black"
-        >
-          <div
-            class="md:w-64 bg-black/50 border-r border-white/5 flex md:flex-col overflow-x-auto md:overflow-x-visible p-4 gap-2"
-          >
-            <div
-              class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 ml-2 mt-2 hidden md:block"
-            >
-              Core
-            </div>
-
-            <template
-              x-for="cmd in ['init', 'build', 'dev', 'run', 'clean', 'doctor']"
-            >
-              <button
-                @click="activeCmd = cmd"
-                :class="activeCmd === cmd ? 'bg-craft-cyan/10 text-craft-cyan border-craft-cyan shadow-[inset_2px_0_0_0_#22d3ee]' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200 border-transparent'"
-                class="px-4 py-2.5 text-left text-sm font-mono rounded-lg transition-all whitespace-nowrap flex items-center gap-3"
-              >
-                <svg
-                  x-show="activeCmd === cmd"
-                  class="w-3 h-3 fill-current"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                </svg>
-                <span x-text="'craft ' + cmd"></span>
-              </button>
-            </template>
-
-            <div
-              class="text-xs font-bold text-gray-600 uppercase tracking-wider mt-6 mb-2 ml-2 hidden md:block"
-            >
-              Wrappers
-            </div>
-            <template x-for="cmd in ['check', 'fmt', 'vet', 'tidy', 'test']">
-              <button
-                @click="activeCmd = cmd"
-                :class="activeCmd === cmd ? 'bg-craft-magenta/10 text-craft-magenta border-craft-magenta shadow-[inset_2px_0_0_0_#e879f9]' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200 border-transparent'"
-                class="px-4 py-2.5 text-left text-sm font-mono rounded-lg transition-all whitespace-nowrap"
-              >
-                <span x-text="'craft ' + cmd"></span>
-              </button>
-            </template>
-          </div>
-
-          <div class="flex-1 bg-craft-panel relative min-h-[550px]">
-            <div
-              x-show="activeCmd === 'build'"
-              x-transition.opacity
-              class="p-8 absolute inset-0 overflow-y-auto"
-            >
-              <div class="flex items-center gap-4 mb-2">
-                <h3 class="text-2xl font-bold">Build Orchestrator</h3>
-              </div>
-              <p class="text-gray-400 mb-4 text-sm">
-                Compiles your project based on <code>.craft.yaml</code>. Injects
-                LDFLAGS, strips debug symbols, and handles multi-target
-                compilation in a single pass.
-              </p>
-
-              <div
-                class="p-3 mb-6 rounded-lg bg-craft-cyan/5 border border-craft-cyan/20 flex items-start gap-3"
-              >
-                <svg
-                  class="w-5 h-5 text-craft-cyan shrink-0 mt-0.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  ></path>
-                </svg>
-                <div>
-                  <h4 class="text-sm font-bold text-craft-cyan">
-                    Shortcut Alias
-                  </h4>
-                  <p class="text-xs text-gray-300">
-                    Running just
-                    <code class="bg-black px-1 rounded text-white">craft</code>
-                    without any command automatically defaults to
-                    <code class="bg-black px-1 rounded text-white"
-                      >craft build</code
-                    >.
-                  </p>
-                </div>
-              </div>
-
-              <div
-                class="bg-black/50 border border-white/10 rounded-lg p-4 mb-6"
-              >
-                <code class="font-mono text-sm text-craft-cyan"
-                  >$ craft build [flags]</code
-                >
-              </div>
-
-              <h4
-                class="text-sm font-bold text-white mb-3 uppercase tracking-wider"
-              >
-                Available Flags
-              </h4>
-              <ul class="space-y-2 text-sm">
-                <li
-                  class="flex flex-col md:flex-row md:items-start gap-2 md:gap-4 p-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/5"
-                >
-                  <code class="text-craft-cyan font-mono shrink-0 w-32"
-                    >--name, -n</code
-                  >
-                  <span class="text-gray-400"
-                    >Override the binary output name specified in yaml.</span
-                  >
-                </li>
-                <li
-                  class="flex flex-col md:flex-row md:items-start gap-2 md:gap-4 p-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/5"
-                >
-                  <code class="text-craft-cyan font-mono shrink-0 w-32"
-                    >--version, -v</code
-                  >
-                  <span class="text-gray-400"
-                    >Override the application version string.</span
-                  >
-                </li>
-                <li
-                  class="flex flex-col md:flex-row md:items-start gap-2 md:gap-4 p-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/5"
-                >
-                  <code class="text-craft-cyan font-mono shrink-0 w-32"
-                    >--entry, -e</code
-                  >
-                  <span class="text-gray-400"
-                    >Set the main package path (default is
-                    <code class="text-gray-300">.</code>).</span
-                  >
-                </li>
-                <li
-                  class="flex flex-col md:flex-row md:items-start gap-2 md:gap-4 p-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/5"
-                >
-                  <code class="text-craft-cyan font-mono shrink-0 w-32"
-                    >--out, -o</code
-                  >
-                  <span class="text-gray-400"
-                    >Define destination directory for artifacts (default:
-                    <code class="text-gray-300">bin/</code>).</span
-                  >
-                </li>
-                <li
-                  class="flex flex-col md:flex-row md:items-start gap-2 md:gap-4 p-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/5"
-                >
-                  <code class="text-craft-cyan font-mono shrink-0 w-32"
-                    >--ver-pkg</code
-                  >
-                  <span class="text-gray-400"
-                    >Target Go variable path for LDFLAGS version
-                    injection.</span
-                  >
-                </li>
-                <li
-                  class="flex flex-col md:flex-row md:items-start gap-2 md:gap-4 p-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/5"
-                >
-                  <code class="text-craft-cyan font-mono shrink-0 w-32"
-                    >--all</code
-                  >
-                  <span class="text-gray-400"
-                    >Cross-compile for all common operating systems and
-                    architectures.</span
-                  >
-                </li>
-                <li
-                  class="flex flex-col md:flex-row md:items-start gap-2 md:gap-4 p-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/5"
-                >
-                  <code class="text-craft-cyan font-mono shrink-0 w-32"
-                    >--platform, -p</code
-                  >
-                  <span class="text-gray-400"
-                    >Specify custom targets. E.g.,
-                    <code class="text-gray-300"
-                      >linux/amd64,windows/amd64</code
-                    ></span
-                  >
-                </li>
-                <li
-                  class="flex flex-col md:flex-row md:items-start gap-2 md:gap-4 p-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/5"
-                >
-                  <code class="text-craft-cyan font-mono shrink-0 w-32"
-                    >--strip</code
-                  >
-                  <span class="text-gray-400"
-                    >Omit DWARF symbol tables to drastically reduce binary size
-                    (default: true).</span
-                  >
-                </li>
-                <li
-                  class="flex flex-col md:flex-row md:items-start gap-2 md:gap-4 p-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/5"
-                >
-                  <code class="text-craft-cyan font-mono shrink-0 w-32"
-                    >--exact-name</code
-                  >
-                  <span class="text-gray-400"
-                    >Omit OS/Arch suffixes. Outputs
-                    <code class="text-gray-300">app</code> instead of
-                    <code class="text-gray-300">app-linux</code>.</span
-                  >
-                </li>
-              </ul>
-            </div>
-
-            <div
-              x-show="activeCmd === 'dev'"
-              x-transition.opacity
-              class="p-8 absolute inset-0 overflow-y-auto"
-              style="display: none"
-            >
-              <h3 class="text-2xl font-bold mb-2">Hot-Reload Engine</h3>
-              <p class="text-gray-400 mb-6 text-sm">
-                Monitors your project for file changes, compiles to a secure
-                temporary directory, and restarts the process automatically.
-                Sweeps zombie files silently on exit.
-              </p>
-              <div
-                class="bg-black/50 border border-white/10 rounded-lg p-4 mb-6"
-              >
-                <code class="font-mono text-sm text-craft-cyan"
-                  >$ craft dev</code
-                >
-              </div>
-            </div>
-
-            <div
-              x-show="activeCmd === 'run'"
-              x-transition.opacity
-              class="p-8 absolute inset-0 overflow-y-auto"
-              style="display: none"
-            >
-              <h3 class="text-2xl font-bold mb-2">Immediate Execution</h3>
-              <p class="text-gray-400 mb-6 text-sm">
-                Bypasses cross-compilation. Builds the binary explicitly for
-                your current host architecture and executes it immediately in a
-                single pass. Perfect for local testing.
-              </p>
-              <div
-                class="bg-black/50 border border-white/10 rounded-lg p-4 mb-6"
-              >
-                <code class="font-mono text-sm text-craft-cyan"
-                  >$ craft run</code
-                >
-              </div>
-            </div>
-
-            <div
-              x-show="activeCmd === 'init'"
-              x-transition.opacity
-              class="p-8 absolute inset-0 overflow-y-auto"
-              style="display: none"
-            >
-              <h3 class="text-2xl font-bold mb-2">Project Scaffolding</h3>
-              <p class="text-gray-400 mb-6 text-sm">
-                Detects your Go module name and automatically generates an
-                optimized, heavily documented <code>.craft.yaml</code> file in
-                the root of your project.
-              </p>
-              <div
-                class="bg-black/50 border border-white/10 rounded-lg p-4 mb-6"
-              >
-                <code class="font-mono text-sm text-craft-cyan"
-                  >$ craft init</code
-                >
-              </div>
-            </div>
-
-            <div
-              x-show="activeCmd === 'clean'"
-              x-transition.opacity
-              class="p-8 absolute inset-0 overflow-y-auto"
-              style="display: none"
-            >
-              <h3 class="text-2xl font-bold mb-2">Targeted Cleanup</h3>
-              <p class="text-gray-400 mb-6 text-sm">
-                Safely removes the generated <code>bin/</code> directory and
-                intelligently sweeps any zombie temporary files left over by
-                cancelled <code>dev</code> sessions.
-              </p>
-              <div
-                class="bg-black/50 border border-white/10 rounded-lg p-4 mb-6"
-              >
-                <code class="font-mono text-sm text-craft-cyan"
-                  >$ craft clean [flags]</code
-                >
-              </div>
-              <h4
-                class="text-sm font-bold text-white mb-3 uppercase tracking-wider"
-              >
-                Dangerous Flags
-              </h4>
-              <ul class="space-y-3 text-sm">
-                <li
-                  class="flex items-start gap-4 p-3 rounded-lg hover:bg-red-500/5 transition-colors border border-transparent hover:border-red-500/10"
-                >
-                  <code class="text-red-400 font-mono shrink-0 w-32"
-                    >--go-cache</code
-                  >
-                  <span class="text-gray-400"
-                    >Force purge the global Go build cache.</span
-                  >
-                </li>
-                <li
-                  class="flex items-start gap-4 p-3 rounded-lg hover:bg-red-500/5 transition-colors border border-transparent hover:border-red-500/10"
-                >
-                  <code class="text-red-400 font-mono shrink-0 w-32"
-                    >--all</code
-                  >
-                  <span class="text-gray-400"
-                    >Purge ALL temporary artifacts globally from OS Temp
-                    directory.</span
-                  >
-                </li>
-              </ul>
-            </div>
-
-            <div
-              x-show="activeCmd === 'doctor'"
-              x-transition.opacity
-              class="p-8 absolute inset-0 overflow-y-auto"
-              style="display: none"
-            >
-              <h3 class="text-2xl font-bold mb-2">System Diagnostics</h3>
-              <p class="text-gray-400 mb-6 text-sm">
-                Generates a copy-paste friendly diagnostic report containing
-                your Go version, host context, and OS-specific limits (like
-                Linux inotify watches) for debugging.
-              </p>
-              <div
-                class="bg-black/50 border border-white/10 rounded-lg p-4 mb-6"
-              >
-                <code class="font-mono text-sm text-craft-cyan"
-                  >$ craft doctor</code
-                >
-              </div>
-            </div>
-
-            <div
-              x-show="activeCmd === 'check'"
-              x-transition.opacity
-              class="p-8 absolute inset-0 overflow-y-auto"
-              style="display: none"
-            >
-              <h3 class="text-2xl font-bold mb-2 text-craft-magenta">
-                Validation Suite
-              </h3>
-              <p class="text-gray-400 mb-6 text-sm">
-                Orchestrates a complete CI/CD pre-flight sequence. Runs
-                <code>fmt</code>, <code>vet</code>, and
-                <code>test</code> sequentially. If any step fails, the pipeline
-                halts.
-              </p>
-              <div
-                class="bg-black/50 border border-white/10 rounded-lg p-4 mb-6"
-              >
-                <code class="font-mono text-sm text-craft-magenta"
-                  >$ craft check</code
-                >
-              </div>
-            </div>
-
-            <div
-              x-show="['fmt', 'vet', 'test', 'tidy'].includes(activeCmd)"
-              x-transition.opacity
-              class="p-8 absolute inset-0 overflow-y-auto"
-              style="display: none"
-            >
-              <h3
-                class="text-2xl font-bold mb-2 capitalize text-craft-magenta"
-                x-text="'Toolchain: ' + activeCmd"
-              ></h3>
-              <p class="text-gray-400 mb-6 text-sm">
-                Wraps the native Go command. Intercepts raw, noisy outputs and
-                parses them into Craft's human-readable, tree-structured UI.
-                Focuses on actionable errors.
-              </p>
-              <div
-                class="bg-black/50 border border-white/10 rounded-lg p-4 mb-6"
-              >
-                <code
-                  class="font-mono text-sm text-craft-magenta"
-                  x-text="'$ craft ' + activeCmd"
-                ></code>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="advanced" class="scroll-mt-32">
-        <div class="flex items-end gap-4 mb-10">
-          <h2 class="text-3xl font-semibold tracking-tight">
-            Advanced Workflows
-          </h2>
-          <div
-            class="h-[1px] flex-1 bg-gradient-to-r from-white/20 to-transparent mb-2"
-          ></div>
-        </div>
-
-        <div class="grid md:grid-cols-2 gap-8">
-          <div
-            class="glass-panel p-8 rounded-2xl group hover:border-white/20 transition-colors flex flex-col"
-          >
-            <div
-              class="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center mb-6"
-            >
-              <svg
-                class="w-5 h-5 text-green-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                ></path>
-              </svg>
-            </div>
-            <h3 class="text-xl font-bold text-white mb-3">
-              Intelligent Hot-Reloading
-            </h3>
-            <p class="text-sm text-gray-400 mb-6 leading-relaxed flex-grow">
-              Craft's <code>dev</code> engine doesn't just restart processes. It
-              isolates the build in your OS's temp directory, debounces rapid
-              file saves, and automatically ignores <code>vendor/</code> and
-              <code>node_modules/</code> directories to save memory.
-            </p>
-            <div
-              class="bg-black/50 border border-white/5 rounded-lg p-4 mt-auto"
-            >
-              <code class="text-xs font-mono text-craft-cyan">$ craft dev</code>
-              <div class="text-xs text-gray-500 mt-2">
-                → Watching 420 files. Rebuilding on save...
-              </div>
-            </div>
-          </div>
-
-          <div
-            class="glass-panel p-8 rounded-2xl group hover:border-white/20 transition-colors flex flex-col"
-          >
-            <div
-              class="w-10 h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center mb-6"
-            >
-              <svg
-                class="w-5 h-5 text-yellow-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                ></path>
-              </svg>
-            </div>
-            <h3 class="text-xl font-bold text-white mb-3">
-              Frictionless Cross-Compilation
-            </h3>
-            <p class="text-sm text-gray-400 mb-6 leading-relaxed flex-grow">
-              Stop exporting <code>GOOS</code> and <code>GOARCH</code> manually.
-              Define your targets in <code>.craft.yaml</code> or pass the
-              <code>--all</code> flag. Craft handles the environment matrix and
-              concurrently generates Windows, Linux, and Mac binaries.
-            </p>
-            <div
-              class="bg-black/50 border border-white/5 rounded-lg p-4 mt-auto"
-            >
-              <code class="text-xs font-mono text-craft-cyan"
-                >$ craft build --all</code
-              >
-            </div>
-          </div>
-
-          <div
-            class="glass-panel p-8 rounded-2xl group hover:border-white/20 transition-colors"
-          >
-            <div
-              class="w-10 h-10 rounded-lg bg-craft-magenta/10 flex items-center justify-center mb-6"
-            >
-              <svg
-                class="w-5 h-5 text-craft-magenta"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"
-                ></path>
-              </svg>
-            </div>
-            <h3 class="text-xl font-bold text-white mb-3">
-              Dynamic Version Injection
-            </h3>
-            <p class="text-sm text-gray-400 mb-6 leading-relaxed">
-              Inject the version string from your
-              <code>.craft.yaml</code> directly into your Go code during build
-              via LDFLAGS. No hardcoded versions.
-            </p>
-
-            <div class="space-y-2">
-              <p class="text-xs text-gray-500 font-mono">1. In .craft.yaml:</p>
-              <pre><code class="language-yaml">version: "v1.5.0"
-version_pkg: "main.AppVersion"</code></pre>
-              <p class="text-xs text-gray-500 font-mono mt-4">2. In main.go:</p>
-              <pre><code class="language-go">package main
-var AppVersion = "dev" // Overridden by Craft</code></pre>
-            </div>
-          </div>
-
-          <div
-            class="glass-panel p-8 rounded-2xl group hover:border-white/20 transition-colors"
-          >
-            <div
-              class="w-10 h-10 rounded-lg bg-craft-cyan/10 flex items-center justify-center mb-6"
-            >
-              <svg
-                class="w-5 h-5 text-craft-cyan"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6h16M4 12h16m-7 6h7"
-                ></path>
-              </svg>
-            </div>
-            <h3 class="text-xl font-bold text-white mb-3">Smart Log Parsing</h3>
-            <p class="text-sm text-gray-400 mb-6 leading-relaxed">
-              Raw Go toolchain errors are noisy. Craft intercepts
-              <code>go vet</code>, <code>go test</code>, and compiler outputs,
-              formatting them into human-readable, tree-structured logs.
-            </p>
-
-            <div
-              class="bg-craft-panel rounded-lg border border-white/5 overflow-hidden"
-            >
-              <div class="p-3 border-b border-white/5 bg-black/50">
-                <code class="text-xs text-craft-magenta font-mono"
-                  >$ craft check</code
-                >
-              </div>
-              <div class="p-4 font-mono text-xs leading-relaxed">
-                <div class="text-white mb-2">Validation Suite</div>
-                <div class="flex items-start gap-2 mb-1">
-                  <span class="text-red-500">✖</span>
-                  <div>
-                    <span class="text-gray-300"
-                      >Static analysis found issues.</span
-                    ><br />
-                    <span class="text-craft-cyan">│</span>
-                    <span class="text-craft-cyan">main.go</span>:<span
-                      class="text-craft-magenta"
-                      >15:2</span
-                    >
-                    ➔ <span class="text-red-400">undefined: fmt.Printl</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="pipelines" class="scroll-mt-32">
-        <div class="flex items-end gap-4 mb-10">
-          <h2 class="text-3xl font-semibold tracking-tight">CI/CD Ready</h2>
-          <div
-            class="h-[1px] flex-1 bg-gradient-to-r from-white/20 to-transparent mb-2"
-          ></div>
-        </div>
-
-        <div class="glass-panel p-8 rounded-2xl">
-          <p class="text-gray-400 mb-8 leading-relaxed max-w-3xl">
-            Craft is engineered to thrive in automated environments like GitHub
-            Actions or GitLab CI. Use
-            <code class="text-white">craft check</code> to ensure code quality
-            halts on failure, and use
-            <code class="text-white">craft build --all</code> to generate
-            pristine release artifacts effortlessly.
+          <h3 class="text-xl font-semibold text-white mb-2 tracking-tight">Smart Package Manager</h3>
+          <p class="text-[14px] text-[#888] leading-relaxed max-w-md">
+            Inspired by <code>uv</code> and <code>npm</code>, Craft provides a high-level CLI to effortlessly <code>add</code>, <code>remove</code>, and <code>sync</code> Go modules with beautiful, explicit diff reporting.
           </p>
+        </div>
+        <div class="relative z-10 mt-4 bg-[#050505] border border-white/5 rounded-xl p-4 font-mono text-[12px] text-gray-400 leading-relaxed shadow-2xl">
+          <div class="mb-3"><span class="text-gray-600">$</span> <span class="text-white">craft sync</span></div>
+          <div class="flex items-center gap-2 text-green-400 mb-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Added 2 packages:</div>
+          <div class="text-gray-500 pl-5 mb-1">github.com/gofiber/fiber/v2</div>
+          <div class="text-gray-500 pl-5 mb-2">github.com/joho/godotenv</div>
+          <div class="flex items-center gap-2 text-cyan-400 mb-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> Updated 1 package:</div>
+          <div class="text-gray-500 pl-5">golang.org/x/crypto</div>
+        </div>
+      </div>
+      
+      <!-- Feature 1: Hot Reload (Small) -->
+      <div class="glass-panel rounded-2xl p-8 relative overflow-hidden group hover:border-white/20 transition-colors duration-500">
+        <div class="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center mb-6">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+        </div>
+        <h3 class="text-xl font-semibold text-white mb-2 tracking-tight">Hot-Reload Engine</h3>
+        <p class="text-[14px] text-[#888] leading-relaxed">
+          Zero-config <code>craft dev</code> command. Features intelligent debouncing, completely isolated temporary builds in your OS <code>/tmp</code> directory, and graceful shutdowns.
+        </p>
+      </div>
 
-       <div
-            x-data="{ copied: false }"
-            class="bg-craft-panel relative rounded-lg border border-white/5 overflow-hidden"
-          >
-            <div
-              class="absolute top-0 left-0 w-full h-8 bg-black/40 flex items-center justify-between px-4 border-b border-white/5 z-10"
-            >
-              <span class="text-[10px] text-gray-500 font-mono">.github/workflows/release.yml</span>
-              
-              <button 
-                @click="copyToClipboard($refs.yamlCode.textContent).then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
-                class="flex items-center gap-1.5 text-[10px] font-mono text-gray-400 hover:text-white transition-colors"
-              >
-                <svg x-show="!copied" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                </svg>
-                <svg x-show="copied" x-cloak class="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span x-show="!copied">Copy</span>
-                <span x-show="copied" x-cloak class="text-green-400">Copied!</span>
-              </button>
+    
+
+      <!-- MIDDLE ROW (Full Block with Divider) -->
+      <div class="md:col-span-3 glass-panel rounded-2xl p-0 relative overflow-hidden group hover:border-white/20 transition-colors duration-500 flex flex-col md:flex-row">
+        <!-- Feature 3: Smart Error Parser (Left Side) -->
+        <div class="p-8 md:w-1/2 flex flex-col justify-between border-b md:border-b-0 md:border-r border-white/5 relative">
+          <div class="absolute top-0 left-0 w-64 h-64 bg-red-500/5 blur-3xl rounded-full"></div>
+          <div class="relative z-10">
+            <div class="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center mb-6">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+            </div>
+            <h3 class="text-xl font-semibold text-white mb-2 tracking-tight">Smart Error Parser</h3>
+            <p class="text-[14px] text-[#888] leading-relaxed mb-6">
+              Craft intercepts messy Go compiler errors and transforms them into an elegant, highly-readable UI using <code>pterm</code>, complete with actionable hints that act as your pair programmer.
+            </p>
+          </div>
+          <div class="relative z-10 bg-[#050505] border border-white/5 rounded-xl p-4 font-mono text-[12px] flex items-center text-gray-400 leading-relaxed">
+            <div>
+              <div class="text-red-400 font-bold mb-2">✖ Build Failed <span class="text-gray-600 font-normal">[linux/amd64]</span></div>
+              <div class="mb-1"><span class="text-red-400">↳</span> <span class="text-white">cmd/server/main.go</span><span class="text-gray-600">:42</span></div>
+              <div class="pl-4 text-red-400 mb-2">undefined: fiber.New()</div>
+              <div class="pl-4"><span class="text-yellow-500">Hint:</span> Run 'craft build' to auto-install or 'go mod tidy'.</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Feature 4: Inline Scripting (Right Side) -->
+        <div class="p-8 md:w-1/2 flex flex-col justify-between relative">
+          <div class="absolute bottom-0 right-0 w-64 h-64 bg-purple-500/5 blur-3xl rounded-full"></div>
+          <div class="relative z-10">
+            <div class="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center mb-6">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 9l3 3-3 3m5 0h3M4 17h16a2 2 0 002-2V9a2 2 0 00-2-2H4a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
+            </div>
+            <h3 class="text-xl font-semibold text-white mb-2 tracking-tight">Inline Scripting</h3>
+            <p class="text-[14px] text-[#888] leading-relaxed mb-6">
+              Turn Go into a scripting language. Execute raw <code>.go</code> files instantly with isolated, automatic dependency resolution in <code>/tmp</code>. Zero project setup required.
+            </p>
+          </div>
+          <div class="relative z-10 bg-[#050505] border border-white/5 rounded-xl p-4 font-mono text-[12px] flex items-center text-gray-400 leading-relaxed">
+            <div class="w-full">
+              <div class="mb-1"><span class="text-gray-500">#!/usr/bin/env craft run --script</span></div>
+              <div class="mb-1"><span class="text-purple-400">package</span> main</div>
+              <div class="mb-2"><span class="text-purple-400">import</span> <span class="text-green-400">"fmt"</span></div>
+              <div class="mb-1"><span class="text-purple-400">func</span> <span class="text-blue-400">main</span>() {</div>
+              <div class="pl-4">fmt.<span class="text-blue-400">Println</span>(<span class="text-green-400">"Go as a script!"</span>)</div>
+              <div>}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTTOM ROW -->
+      <!-- Feature 5: Toolchain Manager (Big) -->
+      <div class="md:col-span-2 glass-panel rounded-2xl p-8 relative overflow-hidden group hover:border-white/20 transition-colors duration-500 flex flex-col justify-between">
+        <div class="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/5 blur-3xl rounded-full"></div>
+        <div class="relative z-10">
+          <div class="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center mb-6">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+          </div>
+          <h3 class="text-xl font-semibold text-white mb-2 tracking-tight">Interactive Toolchain Manager</h3>
+          <p class="text-[14px] text-[#888] leading-relaxed max-w-md">
+            Craft acts as an <code>nvm</code>-like version manager with a beautiful Terminal UI. Browse remote <code>go.dev</code> releases and seamlessly auto-install isolated toolchains into <code>~/.craft</code>.
+          </p>
+        </div>
+        <div class="relative z-10 mt-4 bg-[#050505] border border-white/5 rounded-xl p-4 font-mono text-[12px] text-gray-400 leading-relaxed shadow-2xl">
+          <div class="mb-2"><span class="text-cyan-400 font-bold">?</span> <span class="text-gray-400">Which toolchain would you like to install?</span></div>
+          <div class="mb-1"><span class="text-white">   go1.22.1</span></div>
+          <div class="mb-1 bg-cyan-500/20 px-2 py-0.5 rounded text-cyan-400 font-bold"><span class="mr-2">❯</span> go1.22.0</div>
+          <div class="mb-1"><span class="text-gray-500">   go1.21.8</span></div>
+          <div class="mt-3 text-gray-600 text-[10px]">↑↓ Navigate    Enter Install Selected    Q Quit</div>
+        </div>
+      </div>
+
+      <!-- Feature 6: Asset Minifier (Small) -->
+      <div class="glass-panel rounded-2xl p-8 relative overflow-hidden group hover:border-white/20 transition-colors duration-500">
+        <div class="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center mb-6">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+        </div>
+        <h3 class="text-xl font-semibold text-white mb-2 tracking-tight">Asset Minifier</h3>
+        <p class="text-[14px] text-[#888] leading-relaxed">
+          Natively compress HTML, CSS, JS, and JSON during the build phase. No Node.js, Webpack, or external dependencies required.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Interactive Config Explorer -->
+    <div class="mt-40" id="explorer" x-data="{ activeConf: 'metadata' }">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl font-bold tracking-tight text-white mb-4">Declarative Infrastructure</h2>
+        <p class="text-[#888] max-w-2xl mx-auto text-[15px]">
+          Click any block in the configuration file below to explore how Craft replaces complex bash scripts with a single, deterministic YAML source of truth.
+        </p>
+      </div>
+
+      <div class="glass-panel rounded-2xl overflow-hidden glow-effect flex flex-col lg:flex-row h-[700px] lg:h-[650px] bg-[#0A0A0A]">
+        
+        <!-- Code Side -->
+        <div class="lg:w-[40%] border-r border-white/5 flex flex-col bg-[#050505]">
+          <div class="h-12 bg-white/[0.02] border-b border-white/5 flex items-center px-4 justify-between shrink-0">
+            <div class="flex items-center gap-2 opacity-50">
+              <div class="w-3 h-3 rounded-full bg-[#FF5F56]"></div>
+              <div class="w-3 h-3 rounded-full bg-[#FFBD2E]"></div>
+              <div class="w-3 h-3 rounded-full bg-[#27C93F]"></div>
+            </div>
+            <div class="text-[11px] font-mono text-gray-500 uppercase tracking-widest">.craft.yaml</div>
+          </div>
+
+          <div class="flex-1 p-6 font-mono text-[12px] leading-[1.8] overflow-y-auto cursor-default">
+            
+            <div class="text-[#555] mb-1"># Metadata & Core</div>
+            <div @click="activeConf = 'metadata'" class="cursor-pointer rounded -mx-3 px-3 py-1 transition-all duration-200" :class="activeConf === 'metadata' ? 'bg-white/10 ring-1 ring-white/10' : 'hover:bg-white/5'">
+              <span class="text-blue-400">name:</span> <span class="text-green-400">"craft-api"</span><br />
+              <span class="text-blue-400">entry_point:</span> <span class="text-green-400">"cmd/api"</span><br />
+              <span class="text-blue-400">auto_install:</span> <span class="text-orange-300">true</span>
+            </div>
+
+            <div class="text-[#555] mt-4 mb-1"># Dynamic Versioning</div>
+            <div @click="activeConf = 'version'" class="cursor-pointer rounded -mx-3 px-3 py-1 transition-all duration-200" :class="activeConf === 'version' ? 'bg-white/10 ring-1 ring-white/10' : 'hover:bg-white/5'">
+              <span class="text-blue-400">version:</span> <span class="text-green-400">"in_go:main.AppVersion"</span><br />
+              <span class="text-blue-400">version_pkg:</span> <span class="text-green-400">"main.Version"</span>
+            </div>
+
+            <div class="text-[#555] mt-4 mb-1"># Optimization Flags</div>
+            <div @click="activeConf = 'optimization'" class="cursor-pointer rounded -mx-3 px-3 py-1 transition-all duration-200" :class="activeConf === 'optimization' ? 'bg-white/10 ring-1 ring-white/10' : 'hover:bg-white/5'">
+              <span class="text-blue-400">strip_debug:</span> <span class="text-orange-300">true</span><br />
+              <span class="text-blue-400">trimpath:</span> <span class="text-orange-300">true</span><br />
+              <span class="text-blue-400">cgo_enabled:</span> <span class="text-orange-300">false</span>
+            </div>
+
+            <div class="text-[#555] mt-4 mb-1"># Cross-Platform Targets</div>
+            <div @click="activeConf = 'platforms'" class="cursor-pointer rounded -mx-3 px-3 py-1 transition-all duration-200" :class="activeConf === 'platforms' ? 'bg-white/10 ring-1 ring-white/10' : 'hover:bg-white/5'">
+              <span class="text-blue-400">build_all:</span> <span class="text-orange-300">false</span><br />
+              <span class="text-blue-400">platforms:</span><br />
+              <span class="text-[#888] pl-2">-</span> <span class="text-green-400">"linux/amd64"</span><br/>
+              <span class="text-[#888] pl-2">-</span> <span class="text-green-400">"windows/amd64"</span>
+            </div>
+
+            <div class="text-[#555] mt-4 mb-1"># Asset Minifier</div>
+            <div @click="activeConf = 'minify'" class="cursor-pointer rounded -mx-3 px-3 py-1 transition-all duration-200" :class="activeConf === 'minify' ? 'bg-white/10 ring-1 ring-white/10' : 'hover:bg-white/5'">
+              <span class="text-blue-400">minify:</span><br />
+              <span class="text-blue-400 pl-4">enabled:</span> <span class="text-orange-300">true</span><br />
+              <span class="text-blue-400 pl-4">dirs:</span> <span class="text-green-400">["web", "public"]</span>
+            </div>
+
+            <div class="text-[#555] mt-4 mb-1"># Hot-Reload Config</div>
+            <div @click="activeConf = 'dev'" class="cursor-pointer rounded -mx-3 px-3 py-1 transition-all duration-200" :class="activeConf === 'dev' ? 'bg-white/10 ring-1 ring-white/10' : 'hover:bg-white/5'">
+              <span class="text-blue-400">dev:</span><br />
+              <span class="text-blue-400 pl-4">watch:</span><br />
+              <span class="text-blue-400 pl-8">delay_ms:</span> <span class="text-green-400">500</span><br />
+              <span class="text-blue-400 pl-8">include_exts:</span> <span class="text-green-400">["go", "html"]</span>
+            </div>
+
+            <div class="text-[#555] mt-4 mb-1"># Custom Task Runner</div>
+            <div @click="activeConf = 'commands'" class="cursor-pointer rounded -mx-3 px-3 py-1 transition-all duration-200" :class="activeConf === 'commands' ? 'bg-white/10 ring-1 ring-white/10' : 'hover:bg-white/5'">
+              <span class="text-blue-400">commands:</span><br />
+              <span class="text-blue-400 pl-4">envs:</span><br />
+              <span class="text-blue-400 pl-8">PORT:</span> <span class="text-green-400">"8080"</span><br />
+              <span class="text-blue-400 pl-4">db-migrate:</span> <span class="text-green-400">"{APP_BIN_PATH:NOBUILD} --migrate"</span>
+            </div>
+
+            <div class="text-[#555] mt-4 mb-1"># Workflow Profiles</div>
+            <div @click="activeConf = 'profiles'" class="cursor-pointer rounded -mx-3 px-3 py-1 transition-all duration-200" :class="activeConf === 'profiles' ? 'bg-white/10 ring-1 ring-white/10' : 'hover:bg-white/5'">
+              <span class="text-blue-400">profiles:</span><br />
+              <span class="text-blue-400 pl-4">release:</span><br />
+              <span class="text-blue-400 pl-8">output_dir:</span> <span class="text-green-400">"dist/v1"</span><br />
+              <span class="text-blue-400 pl-8">strip_debug:</span> <span class="text-orange-300">true</span>
             </div>
             
-            <div class="pt-8">
-              <pre><code x-ref="yamlCode" class="language-yaml">name: Production Release
-on:
-  push:
-    tags:
-      - 'v*'
+          </div>
+        </div>
 
-jobs:
-  release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.21'
-          
-      - name: Install Craft Engine
-        run: go install github.com/onurartan/craft@latest
-        
-      - name: Pre-flight Checks (fmt, vet, test)
-        run: craft check
-        
-      - name: Compile Cross-Platform Artifacts
-        run: craft build --all --strip
-        
-      - name: Publish to GitHub Releases
-        uses: softprops/action-gh-release@v2
-        with:
-          files: bin/* # Craft's default output directory
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}</code></pre>
+        <!-- Info Side -->
+        <div class="lg:w-[60%] bg-[#0A0A0A] relative overflow-y-auto">
+          <div class="p-12">
+            
+            <div x-show="activeConf === 'metadata'" x-cloak x-transition.opacity>
+              <h3 class="text-2xl font-semibold text-white mb-4 tracking-tight">Core Metadata</h3>
+              <p class="text-[#888] text-[15px] leading-relaxed mb-8">
+                Define the absolute bare minimum required to orchestrate your Go builds. Set your entry point, base name, and toggle the powerful Package Manager automation.
+              </p>
+              <div class="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-lg text-[13px] text-emerald-200">
+                <strong>Auto-Install Magic:</strong> When <code>auto_install: true</code>, Craft acts as an intelligent package manager. It automatically runs <code>go get</code> for any missing dependencies the moment you hit save, preventing "missing module" compiler errors and keeping you in the flow.
+              </div>
             </div>
+
+            <div x-show="activeConf === 'version'" x-cloak x-transition.opacity>
+              <h3 class="text-2xl font-semibold text-white mb-4 tracking-tight">Dynamic Versioning Engine</h3>
+              <p class="text-[#888] text-[15px] leading-relaxed mb-8">
+                Stop hardcoding versions. Craft features a native AST (Abstract Syntax Tree) parser that safely extracts values directly from your Go source code or JSON/YAML files without compiling.
+              </p>
+              
+              <div class="space-y-6 border-t border-white/5 pt-8">
+                <div>
+                  <h4 class="text-white text-sm font-semibold mb-2">1. AST Extraction (`in_go:`)</h4>
+                  <p class="text-[#666] text-[13px] mb-3">Reads the target Go file safely extracting the constant value.</p>
+                  <code class="block bg-[#050505] p-3 rounded-lg border border-white/5 font-mono text-xs text-green-400">"in_go:main.AppVersion"</code>
+                </div>
+                <div>
+                  <h4 class="text-white text-sm font-semibold mb-2">2. Struct Extraction (`file:`)</h4>
+                  <p class="text-[#666] text-[13px] mb-3">Parses JSON or YAML files to extract specific nested keys.</p>
+                  <code class="block bg-[#050505] p-3 rounded-lg border border-white/5 font-mono text-xs text-green-400">"file:package.json|version"</code>
+                </div>
+                <div>
+                  <h4 class="text-white text-sm font-semibold mb-2">3. LDFLAGS Injection</h4>
+                  <p class="text-[#666] text-[13px] mb-3">The extracted value is automatically injected into your binary at compile time via <code class="text-gray-400">-ldflags "-X <version_pkg>=..."</code>.</p>
+                </div>
+              </div>
+            </div>
+
+            <div x-show="activeConf === 'optimization'" x-cloak x-transition.opacity>
+              <h3 class="text-2xl font-semibold text-white mb-4 tracking-tight">Optimization & Security Flags</h3>
+              <p class="text-[#888] text-[15px] leading-relaxed mb-8">
+                Control the Go compiler's lowest-level flags with simple booleans. Craft handles the complex arguments automatically.
+              </p>
+              <div class="space-y-4">
+                <div class="p-4 bg-[#050505] rounded-lg border border-white/5">
+                  <p class="text-[13px] text-gray-300 mb-1"><strong class="text-white">strip_debug:</strong></p>
+                  <p class="text-[12px] text-gray-500">Removes DWARF symbol tables (`-s -w`), dramatically reducing the final binary size for production deployments.</p>
+                </div>
+                <div class="p-4 bg-[#050505] rounded-lg border border-white/5">
+                  <p class="text-[13px] text-gray-300 mb-1"><strong class="text-white">trimpath:</strong></p>
+                  <p class="text-[12px] text-gray-500">Removes absolute file system paths from the compiled binary, ensuring deterministic builds and protecting your host machine's directory privacy.</p>
+                </div>
+                <div class="p-4 bg-[#050505] rounded-lg border border-white/5">
+                  <p class="text-[13px] text-gray-300 mb-1"><strong class="text-white">cgo_enabled:</strong></p>
+                  <p class="text-[12px] text-gray-500">Toggle CGO. Setting this to false guarantees a pure Go static binary without external C library dependencies.</p>
+                </div>
+              </div>
+            </div>
+
+            <div x-show="activeConf === 'platforms'" x-cloak x-transition.opacity>
+              <h3 class="text-2xl font-semibold text-white mb-4 tracking-tight">Native Cross-Compilation</h3>
+              <p class="text-[#888] text-[15px] leading-relaxed mb-8">
+                Craft completely eliminates the need to write massive bash loops. Simply define your target architectures in an array and Craft compiles them concurrently.
+              </p>
+              <div class="bg-blue-500/5 border border-blue-500/20 p-4 rounded-lg text-[13px] text-blue-200">
+                Setting <code>build_all: true</code> tells Craft to bypass the array and instantly compile for a massive matrix covering Windows, Linux, and macOS (AMD64 and ARM64 architectures) all at once.
+              </div>
+            </div>
+
+            <div x-show="activeConf === 'minify'" x-cloak x-transition.opacity>
+              <h3 class="text-2xl font-semibold text-white mb-4 tracking-tight">Built-in Asset Minifier</h3>
+              <p class="text-[#888] text-[15px] leading-relaxed mb-8">
+                Craft is shipped with the industry-leading <code>tdewolff/minify</code> engine. It compresses your HTML, CSS, JS, SVG, and JSON assets natively during the build phase.
+              </p>
+              <div class="bg-blue-500/5 border border-blue-500/20 p-4 rounded-lg text-[13px] text-blue-200">
+                <strong>No Node.js Required:</strong> You no longer need to pull in Webpack, esbuild, or heavy Node.js dependencies just to minify some CSS. Point Craft to your <code>dirs</code> and it will output optimized files into a <code>_min</code> folder.
+              </div>
+            </div>
+
+            <div x-show="activeConf === 'dev'" x-cloak x-transition.opacity>
+              <h3 class="text-2xl font-semibold text-white mb-4 tracking-tight">Zero-Config Hot Reload</h3>
+              <p class="text-[#888] text-[15px] leading-relaxed mb-8">
+                The Hot-Reload engine watches your source code and restarts your application instantly upon changes. It features a highly intelligent debouncer to prevent rapid sequential rebuilds (e.g., when clicking "Save All").
+              </p>
+              <div class="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-lg text-[13px] text-emerald-200">
+                Craft compiles the temporary binary directly into your OS's <code>/tmp</code> directory, ensuring your workspace remains clean of intermediate compilation artifacts.
+              </div>
+            </div>
+
+            <div x-show="activeConf === 'commands'" x-cloak x-transition.opacity>
+              <h3 class="text-2xl font-semibold text-white mb-4 tracking-tight">The Task Runner (Commands)</h3>
+              <p class="text-[#888] text-[15px] leading-relaxed mb-8">
+                Craft includes a powerful Task Runner engine. Define custom macros and execute them natively as CLI subcommands to orchestrate your entire development lifecycle gracefully.
+              </p>
+              
+              <div class="space-y-6 border-t border-white/5 pt-8">
+                <div>
+                  <h4 class="text-white text-sm font-semibold mb-2">1. Custom Envs</h4>
+                  <p class="text-[#666] text-[13px] mb-3">Define <code>envs</code> globally under the commands block. These environment variables are safely injected during any macro execution automatically.</p>
+                </div>
+                <div>
+                  <h4 class="text-white text-sm font-semibold mb-2">2. The Auto-Build Macro (`{APP_BIN_PATH}`)</h4>
+                  <p class="text-[#666] text-[13px] mb-3">Use smart macros like <code>{APP_BIN_PATH}</code> inside your commands. Craft will automatically compile your binary in the background and insert the absolute path to the executable before running the command.</p>
+                </div>
+                <div>
+                  <p class="text-[#666] text-[13px] mb-3">Check out the <a href="docs.html#task-runner" class="text-white underline">Documentation Portal</a> for a deep dive into command composition (<code>$</code>) and OS-specific execution rules.</p>
+                </div>
+              </div>
+            </div>
+
+            <div x-show="activeConf === 'profiles'" x-cloak x-transition.opacity>
+              <h3 class="text-2xl font-semibold text-white mb-4 tracking-tight">Build Workflow Profiles</h3>
+              <p class="text-[#888] text-[15px] leading-relaxed mb-8">
+                Maintain a clean configuration file by organizing specific environments into distinct profiles. Override output paths, platforms, and flags on the fly.
+              </p>
+              <div class="bg-[#050505] p-4 rounded-lg border border-white/5">
+                <code class="font-mono text-[13px] text-gray-400">
+                  <span class="text-gray-600">$</span> <span class="text-white">craft build</span> -P release
+                </code>
+                <p class="text-[#666] text-xs mt-3">
+                  Running this command merges the <code>release</code> profile over the base configuration, overriding the <code>output_dir</code> and aggressively stripping debug symbols.
+                </p>
+              </div>
+            </div>
+
           </div>
         </div>
-      </section>
-
-      <section id="faq" class="scroll-mt-32">
-        <div class="flex items-end gap-4 mb-10">
-          <h2 class="text-3xl font-semibold tracking-tight">
-            Troubleshooting & FAQ
-          </h2>
-          <div
-            class="h-[1px] flex-1 bg-gradient-to-r from-white/20 to-transparent mb-2"
-          ></div>
-        </div>
-
-        <div class="grid md:grid-cols-2 gap-6">
-          <div
-            class="glass-panel p-6 rounded-xl hover:bg-white/5 transition-colors"
-          >
-            <h3
-              class="text-lg font-medium text-white mb-2 flex items-center gap-2"
-            >
-              <svg
-                class="w-5 h-5 text-red-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                ></path>
-              </svg>
-              Command not found: craft
-            </h3>
-            <p class="text-sm text-gray-400 leading-relaxed">
-              If you ran <code class="text-gray-300">go install</code> but your
-              terminal doesn't recognize
-              <code class="text-gray-300">craft</code>, your Go binary path
-              isn't in your system's PATH. Add
-              <code class="text-gray-300">~/go/bin</code> (or
-              <code class="text-gray-300">%USERPROFILE%\go\bin</code> on
-              Windows) to your environment variables.
-            </p>
-          </div>
-
-          <div
-            class="glass-panel p-6 rounded-xl hover:bg-white/5 transition-colors"
-          >
-            <h3
-              class="text-lg font-medium text-white mb-2 flex items-center gap-2"
-            >
-              <svg
-                class="w-5 h-5 text-yellow-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                ></path>
-              </svg>
-              CGO Cross-Compilation Fails
-            </h3>
-            <p class="text-sm text-gray-400 leading-relaxed">
-              Cross-compiling across different OS (e.g., Mac to Windows) while
-              <code class="text-gray-300">cgo_enabled: true</code> requires an
-              external C compiler toolchain like MinGW or Zig. If your project
-              doesn't strictly need C libraries, set it to
-              <code class="text-gray-300">false</code> in
-              <code class="text-gray-300">.craft.yaml</code>.
-            </p>
-          </div>
-
-          <div
-            class="glass-panel p-6 rounded-xl hover:bg-white/5 transition-colors"
-          >
-            <h3
-              class="text-lg font-medium text-white mb-2 flex items-center gap-2"
-            >
-              <svg
-                class="w-5 h-5 text-craft-cyan"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                ></path>
-              </svg>
-              Why not just use Taskfile or Make?
-            </h3>
-            <p class="text-sm text-gray-400 leading-relaxed">
-              Task runners execute shell commands. Craft is a dedicated Go
-              utility that <i>understands</i> the Go ecosystem. It parses
-              compiler logs, handles LDFLAGS natively, and executes strictly
-              without relying on OS-level bash/powershell differences.
-            </p>
-          </div>
-
-          <div
-            class="glass-panel p-6 rounded-xl hover:bg-white/5 transition-colors"
-          >
-            <h3
-              class="text-lg font-medium text-white mb-2 flex items-center gap-2"
-            >
-              <svg
-                class="w-5 h-5 text-green-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 13l4 4L19 7"
-                ></path>
-              </svg>
-              Can I use it on legacy projects?
-            </h3>
-            <p class="text-sm text-gray-400 leading-relaxed">
-              Yes. Just navigate to your project root and run
-              <code class="text-gray-300">craft init</code>. Craft will safely
-              scan your <code>go.mod</code> and create a non-destructive
-              <code class="text-gray-300">.craft.yaml</code> without touching
-              your source code.
-            </p>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <footer class="border-t border-white/5 bg-black/50 mt-20">
-      <div
-        class="max-w-6xl mx-auto px-6 py-12 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500"
-      >
-        <div class="flex items-center gap-2 mb-4 md:mb-0">
-          <span class="w-2 h-2 rounded-full bg-gray-600"></span>
-          Onurartan/Craft © 2026
-        </div>
-        <p class="flex items-center gap-2">
-          Engineered for the
-          <span
-            class="text-white font-medium hover:text-craft-cyan transition-colors cursor-pointer"
-            >Go Ecosystem</span
-          >
-        </p>
       </div>
-    </footer>
-
-
-    <div 
-      x-data="{ show: false, message: '' }"
-      @show-toast.window="message = $event.detail; show = true; setTimeout(() => show = false, 3000)"
-      x-show="show"
-      x-transition:enter="transition ease-out duration-300"
-      x-transition:enter-start="opacity-0 translate-y-10 scale-95"
-      x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-      x-transition:leave="transition ease-in duration-200"
-      x-transition:leave-start="opacity-100 translate-y-0 scale-100"
-      x-transition:leave-end="opacity-0 translate-y-10 scale-95"
-      x-cloak
-      class="fixed bottom-6 right-6 z-[100] flex items-center gap-3 bg-[#111] backdrop-blur-md border border-white/10 px-5 py-3.5 rounded-xl shadow-2xl"
-    >
-      <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-      </svg>
-      <span class="text-sm font-medium text-white font-sans" x-text="message"></span>
     </div>
-    
-    <script>
-      document.addEventListener("alpine:init", () => {
-        Alpine.effect(() => {
-          setTimeout(() => {
-            Prism.highlightAll();
-          }, 50);
-        });
-      });
+  </main>
 
+  <!-- Bottom CTA -->
+  <section class="border-t border-white/5 bg-[#050505] py-32 text-center relative overflow-hidden">
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none"></div>
+    <div class="relative z-10 max-w-2xl mx-auto px-6">
+      <h2 class="text-4xl md:text-5xl font-bold text-white tracking-tight mb-6">Ready to orchestrate your Go workflow?</h2>
+      <p class="text-[#888] text-[17px] mb-10 leading-relaxed">
+        Join the modern era of Go development. Zero configuration required to start, infinitely customizable when you need it.
+      </p>
+      <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+        <a href="docs.html" class="px-8 py-3.5 rounded-lg bg-white text-black font-semibold hover:bg-gray-200 transition-colors duration-300 w-full sm:w-auto">
+          Read the Documentation
+        </a>
+        <a href="https://github.com/onurartan/craft" target="_blank" class="px-8 py-3.5 rounded-lg bg-white/5 text-white font-medium border border-white/10 hover:bg-white/10 transition-colors duration-300 w-full sm:w-auto flex items-center justify-center gap-2">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          Star on GitHub
+        </a>
+      </div>
+    </div>
+  </section>
 
-  
-      function copyToClipboard(text, toastMsg = "Copied to clipboard!") {
-        // Alpine.js Toast bileşenini tetikleyen sinyal
-        const triggerToast = () => window.dispatchEvent(new CustomEvent('show-toast', { detail: toastMsg }));
+  <!-- Footer -->
+  <footer class="border-t border-white/5 bg-[#050505] py-12">
+    <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+      <div class="flex items-center gap-3">
+        <span class="font-bold text-lg text-white tracking-tight">Craft</span>
+        <span class="text-[#555] text-sm">Professional Go Engine</span>
+      </div>
+      <div class="flex gap-6 text-sm text-[#888] font-medium">
+        <a href="docs.html" class="hover:text-white transition-colors">Documentation</a>
+        <a href="https://github.com/onurartan/craft" target="_blank" class="hover:text-white transition-colors">GitHub Repository</a>
+      </div>
+    </div>
+  </footer>
 
-        if (navigator.clipboard && window.isSecureContext) {
-            return navigator.clipboard.writeText(text).then(triggerToast);
-        } else {
-            let textArea = document.createElement("textarea");
-            textArea.value = text;
-            textArea.style.position = "fixed";
-            textArea.style.left = "-999999px";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            return new Promise((resolve, reject) => {
-                if (document.execCommand('copy')) {
-                    triggerToast();
-                    resolve();
-                } else {
-                    reject();
-                }
-                textArea.remove();
-            });
-        }
-      }
-    
-    </script>
-  </body>
+</body>
 </html>

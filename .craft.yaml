@@ -1,58 +1,132 @@
-# Craft Build Utility Configuration
-# Github: https://github.com/onurartan/craft
-# Documentation: https://craft.trymagic.xyz
+# ==============================================================================
+# Craft Internal Build Configuration (.craft.yaml)
+# ==============================================================================
+# This configuration file is used exclusively by contributors and maintainers
+# to build, test, and generate documentation for the Craft CLI toolchain itself.
+#
+# If you are looking for an example of how to configure your own projects,
+# please refer to the official documentation or use the `craft create` command.
+# ==============================================================================
 
-# --- METADATA & PATHS ---
-name: "craft" # Name of the compiled binary
-entry_point: "." # Directory containing the main package
-output_dir: "bin" # Default destination directory for build artifacts
-exact_name: true # Omit OS/Arch suffixes from the binary name
+# Project Metadata
+name: craft
+# version: 0.2.0 # if .version file have you dont need this
 
-# --- VERSIONING & LDFLAGS INJECTION ---
-version: "0.1.0" # Application version string
-version_pkg: "main.CraftAppVersion" # Package path to inject the version via LDFLAGS (e.g., main.Version)
+# Build Engine Configuration
+toolchain: go1.25.0
+entry_point: .
+output_dir: bin
 
-# --- PLATFORM TARGETS ---
-build_all: false # Compile for all major OS/Arch combinations
+# Automatically inject the version string into this package at build time
+# version_pkg: main.CraftAppVersion
+
+# Target Platforms
+build_all: false
 platforms:
-  - "current" # Target specific platforms (e.g., "linux/amd64", "darwin/arm64", "current")
+  - current
 
-# --- BUILD PROFILES (Workflow Overrides) ---
-# Define specific build scenarios. Use 'craft build -P <profile_name>' to trigger.
-# Values defined in a profile will override the global settings above.
-#  Example: A profile for NPM distribution that compiles for all platforms but outputs to a different directory.
+# ==============================================================================
+# Task Runner (Custom Commands)
+# ==============================================================================
+commands:
+  # Global environment variables injected natively into all tasks
+  envs:
+    APP_NAME: "Craft"
+
+  # Atomic Commands
+  # build-craft: craft build --out .
+  build-craft: craft build
+  install-craft: craft install .
+
+  # Composite Task: Automates building and installing Craft globally
+  setup:
+    - echo Setting up {APP_NAME} globally on your system...
+    - $build-craft # this only example step not need you can use only `craft install .` this command  always work not need build command
+    - $install-craft
+    - echo {APP_NAME} has been successfully built and installed!
+
+  # Example Task: Database migrations (Replace with your actual tools like Goose)
+  migrate:
+    db: "echo Migrating DB on {OS} using {APP_BIN_PATH:NOBUILD} with args: {ARGS}"
+    logdb: "echo Migrating Log DB on {OS}"
+
+  # Documentation Server
+  # Runs the Python development server for viewing the HTML documentation
+  docs: uv run docs/server.py
+
+  # Markdown Viewer
+  # Quickly previews a markdown file without typing long CLI flags manually.
+  # Usage: craft run mdview <path/to/file.md>
+  mdview: uv run docs/server.py --md-view {ARGS}
+
+  # Nested Tasks
+  craft:
+    test: go test ./... -v
+
+# ==============================================================================
+# Build Profiles
+# ==============================================================================
 profiles:
   npm:
-    output_dir: "npm/bin" # Route artifacts to a specific NPM package directory
-    build_all: true # Override local build and compile for all systems
-    exact_name: false # Ensure OS/Arch suffixes are appended for distribution
-
+    output_dir: npm/bin
+    name: ""
+    build_all: true
+    platforms: []
+    exact_name: false
   release:
-    output_dir: "releases/v1" # Isolate production release artifacts
+    output_dir: releases/v1
+    name: ""
+    build_all: false
     platforms:
-      - "linux/amd64"
-      - "windows/amd64" # Restrict this profile to specific target architectures
+      - linux/amd64
+      - windows/amd64
+    exact_name: false
 
-# --- BUILD OPTIMIZATION ---
-strip_debug: true # Exclude DWARF symbols to minimize binary size
-trimpath: true # Remove host absolute paths for privacy and reproducible builds
-cgo_enabled: false # Enable C-language interoperability
-race: false # Enable data race detector (adds runtime overhead)
-tags: [] # Custom Go build tags (e.g., ["pro", "dev"])
+# ==============================================================================
+# Advanced Compiler Flags
+# ==============================================================================
+auto_install: true
+strip_debug: true
+exact_name: true
+trimpath: true
+cgo_enabled: false
+race: false
+tags: []
 
-# --- DEVELOPMENT & HOT-RELOAD ---
+# ==============================================================================
+# Development Watcher (craft dev)
+# ==============================================================================
 dev:
   watch:
-    enabled: false # Toggle automatic rebuilds on file changes
-    delay_ms: 500 # Debounce delay (in milliseconds) before triggering a rebuild
-    include_exts: ["go", "html", "tpl", "env", "yaml"] # File extensions to monitor
-    exclude_dirs: [
-        "bin",
-        "tmp",
-        "vendor",
-        "node_modules",
-        ".git",
-        "assets",
-        "testdata",
-      ] # Ignored directories
-    exclude_files: [".craft.yaml"] # Specific files to ignore
+    delay_ms: 500
+    include_exts:
+      - go
+      - html
+      - tpl
+      - env
+      - yaml
+    exclude_dirs:
+      - bin
+      - tmp
+      - vendor
+      - node_modules
+      - .git
+      - assets
+      - testdata
+      - docs
+      - .docs
+    exclude_files:
+      - .craft.yaml
+
+# ==============================================================================
+# Asset Minification
+# ==============================================================================
+minify:
+  enabled: false
+  extensions:
+    - .html
+    - .css
+    - .js
+    - .json
+    - .svg
+  dirs: []

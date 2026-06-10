@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -20,8 +21,8 @@ func ExecuteInitProcess(args []string) error {
 		return nil
 	}
 
-	pterm.DefaultSection.Println("Project Discovery & Analysis")
-	
+	pterm.Printf("%s\n\n", pterm.NewStyle(pterm.FgCyan, pterm.Bold).Sprint("▶ Project Discovery & Analysis"))
+
 	// DISCOVERY
 	projectName := resolveProjectName(args)
 	entryPoint := resolveEntryPoint()
@@ -30,28 +31,57 @@ func ExecuteInitProcess(args []string) error {
 
 	// PRESENTATION
 	pterm.DefaultTable.WithData([][]string{
-		{"Analyzed Field", "Resolved Value", "Source"},
-		{"Project Identity", pterm.FgCyan.Sprint(projectName), "go.mod/dir"},
-		{"Execution Entry", pterm.FgCyan.Sprint(entryPoint), "filesystem"},
-		{"Host Platform", pterm.FgMagenta.Sprintf("%s/%s", hostOS, hostArch), "runtime"},
-		{"Output Target", pterm.FgGreen.Sprint(DefaultDistDir), "default"},
-	}).WithHasHeader().WithBoxed().Render()
+		{pterm.FgDarkGray.Sprint("ANALYZED FIELD"), pterm.FgDarkGray.Sprint("RESOLVED VALUE"), pterm.FgDarkGray.Sprint("SOURCE")},
+		{pterm.FgWhite.Sprint("Project Identity"), pterm.FgLightCyan.Sprint(projectName), pterm.FgDarkGray.Sprint("go.mod/dir")},
+		{pterm.FgWhite.Sprint("Execution Entry"), pterm.FgLightCyan.Sprint(entryPoint), pterm.FgDarkGray.Sprint("filesystem")},
+		{pterm.FgWhite.Sprint("Host Platform"), pterm.FgLightMagenta.Sprintf("%s/%s", hostOS, hostArch), pterm.FgDarkGray.Sprint("runtime")},
+		{pterm.FgWhite.Sprint("Output Target"), pterm.FgLightGreen.Sprint(DefaultDistDir), pterm.FgDarkGray.Sprint("default")},
+	}).WithHasHeader().WithSeparator("   ").Render()
 
+	if err := GenerateDefaultConfig(ConfigFileName, projectName); err != nil {
+		pterm.Error.Printf("Failed to write %s: %v\n", ConfigFileName, err)
+		return err
+	}
+
+	// Create a default .version file
+	versionPath := filepath.Join(filepath.Dir(ConfigFileName), ".version")
+	if _, err := os.Stat(versionPath); os.IsNotExist(err) {
+		os.WriteFile(versionPath, []byte("0.1.0\n"), 0644)
+	}
+
+	pterm.Println()
+	pterm.Success.Printf("Generated optimized configuration: %s\n", pterm.FgMagenta.Sprint(ConfigFileName))
+
+	pterm.Info.Println("Next steps:")
+	pterm.Printf("  1. Review %s to verify your entry point.\n", pterm.FgCyan.Sprint(ConfigFileName))
+	pterm.Printf("  2. Run %s to start rapid development.\n", pterm.FgGreen.Sprint("craft dev"))
+
+	return nil
+}
+
+// GenerateDefaultConfig generates and writes the default .craft.yaml file.
+func GenerateDefaultConfig(path string, projectName string) error {
+	entryPoint := resolveEntryPoint()
+	sysGoVer := getSystemGoVersion()
 	smartConfig := fmt.Sprintf(`# Craft Build Utility Configuration
 # Github: https://github.com/onurartan/craft
-# Documentation: https://craft.trymagic.xyz
+# Documentation: %[1]s
 
-# --- METADATA & PATHS ---
-name: "%s" # Name of the compiled binary
-entry_point: "%s" # Directory containing the main package
-output_dir: "%s" # Default destination directory for build artifacts
+# --- METADATA, TOOLCHAIN & PATHS ---
+# Learn more: %[1]s#2-metadata-toolchain--layout
+name: "%[2]s" # Name of the compiled binary
+toolchain: "%[5]s" # Enforce a specific Go compiler version for this project (e.g. "1.22.1")
+entry_point: "%[3]s" # Directory containing the main package
+output_dir: "%[4]s" # Default destination directory for build artifacts
 exact_name: true # Omit OS/Arch suffixes from the binary name
 
 # --- VERSIONING & LDFLAGS INJECTION ---
-version: "0.1.0" # Application version string (Can be 'in_go:pkg.Var' or 'file:VERSION')
+# Learn more: %[1]s#3-versioning--dynamic-ldflags
+version: "file:.version" # Application version string (Can be 'in_go:pkg.Var', 'file:VERSION', or plain string)
 version_pkg: "" # Package path to inject the version via LDFLAGS (e.g., main.Version)
 
 # --- PLATFORM TARGETS ---
+# Learn more: %[1]s#4-cross-platform-targets
 build_all: false # Compile for all major OS/Arch combinations concurrently
 platforms:
   - "current" # Compiles only for your active host machine
@@ -62,6 +92,7 @@ platforms:
   # - "darwin/arm64"
 
 # --- BUILD PROFILES (Workflow Overrides) ---
+# Learn more: %[1]s#10-build-profiles
 # Define specific build scenarios. Use 'craft build -P <profile_name>' to trigger.
 # Values defined in a profile will override the global settings above.
 #profiles:
@@ -77,6 +108,7 @@ platforms:
 #      - "windows/amd64" # Restrict this profile to specific target architectures
 
 # --- BUILD OPTIMIZATION ---
+# Learn more: %[1]s#5-build-optimization--flags
 strip_debug: true # Exclude DWARF symbols to minimize binary size
 trimpath: true # Remove host absolute paths for privacy and reproducible builds
 cgo_enabled: false # Enable C-language interoperability
@@ -84,27 +116,53 @@ race: false # Enable data race detector (adds runtime overhead)
 tags: [] # Custom Go build tags (e.g., ["pro", "dev"])
 
 # --- DEVELOPMENT & HOT-RELOAD ---
+# Learn more: %[1]s#6-hot-reload-engine-dev-mode
 dev:
   watch:
     delay_ms: 500 # Debounce delay (in milliseconds) before triggering a rebuild
     include_exts: ["go", "html", "tpl", "env", "yaml"] # File extensions to monitor
     exclude_dirs: ["bin", "tmp", "vendor", "node_modules", ".git", "assets", "testdata"] # Ignored directories
     exclude_files: [".craft.yaml"] # Specific files to ignore
-`, projectName, entryPoint, DefaultDistDir)
 
-	if err := os.WriteFile(ConfigFileName, []byte(smartConfig), 0644); err != nil {
-		pterm.Error.Printf("Failed to write %s: %v\n", ConfigFileName, err)
-		return err
-	}
+# --- MAGIC FEATURES (Craft v2) ---
+# Learn more: %[1]s#2-metadata-toolchain--layout
+auto_install: true # Auto-resolves and installs missing modules (e.g. "go get") during build/run
 
-	pterm.Println()
-	pterm.Success.Printf("Generated optimized configuration: %s\n", pterm.FgMagenta.Sprint(ConfigFileName))
-	
-	pterm.Info.Println("Next steps:")
-	pterm.Printf("  1. Review %s to verify your entry point.\n", pterm.FgCyan.Sprint(ConfigFileName))
-	pterm.Printf("  2. Run %s to start rapid development.\n", pterm.FgGreen.Sprint("craft dev"))
+# Learn more: %[1]s#7-asset-minification
+minify:
+  enabled: false # If true, Craft will compress assets (HTML/CSS/JS) before embedding
+  dirs: ["public"] # Directories to compress. Compressed files will be saved in "public_min"
+  extensions: [".html", ".css", ".js", ".json", ".svg"]
 
-	return nil
+# --- BUILD LIFECYCLE HOOKS ---
+# Learn more: %[1]s#8-build-lifecycle-hooks-scripts
+# Execute OS-specific scripts at specific stages of the build/run cycle.
+#scripts:
+#  pre_build:
+#    - "echo 'Running code generation...'"
+#    - "swag init"
+#  post_build:
+#    - "echo 'Build successful, artifact ready!'"
+#  pre_run:
+#    - "echo 'Starting application dependencies...'"
+#  post_run:
+#    - "echo 'Application stopped.'"
+
+# --- TASK RUNNER (Custom Commands) ---
+# Learn more: %[1]s#9-task-runner-custom-commands
+# Define custom macros and tasks here. Run them using 'craft <command>' or 'craft run <command>'.
+commands:
+  envs:
+    # Define your custom variables here.
+    # EX_VAR: "example_value"
+  
+  # Example: 
+  # setup:
+  #   - "go get ./..."
+  #   - "echo Setup done on {OS}!"
+`, CraftDocsURL, projectName, entryPoint, DefaultDistDir, sysGoVer)
+
+	return os.WriteFile(path, []byte(smartConfig), 0644)
 }
 
 // resolveProjectName determines the name via args, go.mod or directory name.
@@ -145,4 +203,19 @@ func resolveEntryPoint() string {
 	}
 
 	return "."
+}
+
+// getSystemGoVersion detects the local go version for the init template.
+func getSystemGoVersion() string {
+	cmd := exec.Command("go", "env", "GOVERSION")
+	out, err := cmd.Output()
+	if err != nil {
+		return "1.22.1"
+	}
+	ver := strings.TrimSpace(string(out))
+	ver = strings.TrimPrefix(ver, "go")
+	if ver == "" {
+		return "1.22.1"
+	}
+	return ver
 }
