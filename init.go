@@ -67,22 +67,25 @@ func GenerateDefaultConfig(path string, projectName string) error {
 # Github: https://github.com/onurartan/craft
 # Documentation: %[1]s
 
-# --- METADATA, TOOLCHAIN & PATHS ---
-# Learn more: %[1]s#2-metadata-toolchain--layout
+# --- METADATA & PATHS ---
+# Learn more: %[1]s#metadata-and-paths
 name: "%[2]s" # Name of the compiled binary
-toolchain: "%[5]s" # Enforce a specific Go compiler version for this project (e.g. "1.22.1")
 entry_point: "%[3]s" # Directory containing the main package
 output_dir: "%[4]s" # Default destination directory for build artifacts
-exact_name: true # Omit OS/Arch suffixes from the binary name
+
+# --- TOOLCHAIN MANAGEMENT ---
+# Learn more: %[1]s#toolchain-management
+toolchain: "%[5]s" # Enforce a specific Go compiler version for this project (e.g. "1.22.1")
 
 # --- VERSIONING & LDFLAGS INJECTION ---
-# Learn more: %[1]s#3-versioning--dynamic-ldflags
-version: "file:.version" # Application version string (Can be 'in_go:pkg.Var', 'file:VERSION', or plain string)
+# Learn more: %[1]s#versioning-and-ldflags
+version: "file:.version" # Application version (Can be 'in_go:pkg.Var', 'file:VERSION', or plain string)
 version_pkg: "" # Package path to inject the version via LDFLAGS (e.g., main.Version)
 
 # --- PLATFORM TARGETS ---
-# Learn more: %[1]s#4-cross-platform-targets
+# Learn more: %[1]s#cross-platform-targets
 build_all: false # Compile for all major OS/Arch combinations concurrently
+exact_name: true # Omit OS/Arch suffixes from the binary name when building locally
 platforms:
   - "current" # Compiles only for your active host machine
   # - "linux/amd64"
@@ -92,23 +95,16 @@ platforms:
   # - "darwin/arm64"
 
 # --- BUILD PROFILES (Workflow Overrides) ---
-# Learn more: %[1]s#10-build-profiles
+# Learn more: %[1]s#build-profiles
 # Define specific build scenarios. Use 'craft build -P <profile_name>' to trigger.
-# Values defined in a profile will override the global settings above.
 #profiles:
 #  npm:
 #    output_dir: "npm/bin" # Route artifacts to a specific NPM package directory
 #    build_all: true # Override local build and compile for all systems
 #    exact_name: false # Ensure OS/Arch suffixes are appended for distribution
-#
-#  release:
-#    output_dir: "releases/v1" # Isolate production release artifacts
-#    platforms:
-#      - "linux/amd64"
-#      - "windows/amd64" # Restrict this profile to specific target architectures
 
 # --- BUILD OPTIMIZATION ---
-# Learn more: %[1]s#5-build-optimization--flags
+# Learn more: %[1]s#build-optimization
 strip_debug: true # Exclude DWARF symbols to minimize binary size
 trimpath: true # Remove host absolute paths for privacy and reproducible builds
 cgo_enabled: false # Enable C-language interoperability
@@ -116,50 +112,44 @@ race: false # Enable data race detector (adds runtime overhead)
 tags: [] # Custom Go build tags (e.g., ["pro", "dev"])
 
 # --- DEVELOPMENT & HOT-RELOAD ---
-# Learn more: %[1]s#6-hot-reload-engine-dev-mode
+# Learn more: %[1]s#hot-reload-engine
 dev:
   watch:
     delay_ms: 500 # Debounce delay (in milliseconds) before triggering a rebuild
     include_exts: ["go", "html", "tpl", "env", "yaml"] # File extensions to monitor
     exclude_dirs: ["bin", "tmp", "vendor", "node_modules", ".git", "assets", "testdata"] # Ignored directories
-    exclude_files: [".craft.yaml"] # Specific files to ignore
+    exclude_files: [".craft.yaml", ".version"] # Specific files to ignore
 
-# --- MAGIC FEATURES (Craft v2) ---
-# Learn more: %[1]s#2-metadata-toolchain--layout
-auto_install: true # Auto-resolves and installs missing modules (e.g. "go get") during build/run
+# --- MAGIC FEATURES ---
+# Learn more: %[1]s#magic-features
+auto_install: true # Auto-resolves and installs missing modules during build/run
 
-# Learn more: %[1]s#7-asset-minification
 minify:
   enabled: false # If true, Craft will compress assets (HTML/CSS/JS) before embedding
-  dirs: ["public"] # Directories to compress. Compressed files will be saved in "public_min"
+  dirs: ["public"] # Directories to compress
   extensions: [".html", ".css", ".js", ".json", ".svg"]
 
 # --- BUILD LIFECYCLE HOOKS ---
-# Learn more: %[1]s#8-build-lifecycle-hooks-scripts
-# Execute OS-specific scripts at specific stages of the build/run cycle.
+# Learn more: %[1]s#lifecycle-hooks
+# Execute scripts at specific stages of the build/run cycle.
 #scripts:
 #  pre_build:
 #    - "echo 'Running code generation...'"
-#    - "swag init"
 #  post_build:
 #    - "echo 'Build successful, artifact ready!'"
-#  pre_run:
-#    - "echo 'Starting application dependencies...'"
-#  post_run:
-#    - "echo 'Application stopped.'"
 
 # --- TASK RUNNER (Custom Commands) ---
-# Learn more: %[1]s#9-task-runner-custom-commands
-# Define custom macros and tasks here. Run them using 'craft <command>' or 'craft run <command>'.
+# Learn more: %[1]s#task-runner
+# Define custom macros and tasks here. Run them using 'craft <command>'.
 commands:
+  # Define custom variables here to use in tasks via {VAR_NAME}
   envs:
-    # Define your custom variables here.
     # EX_VAR: "example_value"
   
-  # Example: 
+  # Example Task:
   # setup:
   #   - "go get ./..."
-  #   - "echo Setup done on {OS}!"
+  #   - "echo Setup done on {OS}/{ARCH}!"
 `, CraftDocsURL, projectName, entryPoint, DefaultDistDir, sysGoVer)
 
 	return os.WriteFile(path, []byte(smartConfig), 0644)
