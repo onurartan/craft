@@ -196,20 +196,25 @@ class CraftDocHandler(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def log_message(self, format, *args):
-        # Clean CLI formatting: Only log 404s or actual file accesses, ignore /_livereload spam
-        if args[0].startswith("GET /_livereload"):
-            return
-        
-        status = args[1]
-        msg = format % args
-        if status.startswith("2") or status.startswith("3"):
-            color = Colors.GREEN
-        elif status.startswith("4") or status.startswith("5"):
-            color = Colors.YELLOW
-        else:
-            color = Colors.RESET
+        try:
+            # Clean CLI formatting: Only log 404s or actual file accesses, ignore /_livereload spam
+            if isinstance(args[0], str) and args[0].startswith("GET /_livereload"):
+                return
             
-        print(f"[{time.strftime('%H:%M:%S')}] {color}{msg}{Colors.RESET}")
+            msg = format % args
+            status = str(args[1]) if len(args) > 1 else str(args[0])
+            
+            if status.startswith("2") or status.startswith("3"):
+                color = Colors.GREEN
+            elif status.startswith("4") or status.startswith("5"):
+                color = Colors.YELLOW
+            else:
+                color = Colors.RESET
+                
+            sys.stderr.write(f"{color}[CRAFT DOCS] {msg}{Colors.RESET}\n")
+        except Exception:
+            # Fallback for unexpected log formats
+            sys.stderr.write(f"[CRAFT DOCS] {format % args}\n")
 
 def main():
     # Force UTF-8 encoding for Windows terminals to support symbols like ▲ and ➜
